@@ -1,5 +1,4 @@
 #include <Servo.h>
-
 // ----------- Pin Definitions -----------
 // L298P Motor A (Left Motor)
 const int MotorA1 = 12;  // IN1

@@ -3,7 +3,7 @@ import time
 from camera import CameraBottom, Camera
 from config import FRAME_DELAY
 from lane_detection import LaneDetector
-from crosswalk_detection import process_frame_for_crosswalk
+from crosswalk_detection import CrosswalkDetector
 from trafficlight_detection import TrafficLightDetector
 from apriltag_detection import apriltag_detection
 import serial_connector
@@ -16,35 +16,44 @@ class Robot:
         
         # Cameras
         self.top_camera = Camera(1) # top --- attention!!! --- not implemented!!!
-        self.bottom_camera = CameraBottom(0) # bottom
-        
+        self.bottom_camera = CameraBottom(
+            "D:\\div_5\\open_cv\\video_2025-02-15_11-43-46.mp4"
+        ) # bottom
+         
         # Detectors
         self.trafficlight_detector = TrafficLightDetector(
             self.bottom_camera.width,
             self.top_camera.height,
             normalized_roi=[[0, 0.5], [0, 0.5]],
         )
+        self.crosswalk_detector = CrosswalkDetector()
         self.lane_detector = LaneDetector(self.bottom_camera, self.ser)
 
     def autorun(self):
         
         while True:
             ret, camera_bottom_frame = self.bottom_camera.cap.read()
-            # crosswalk
-            camera_bottom_frame, crosswalk_detected = process_frame_for_crosswalk(
-                camera_bottom_frame, self.bottom_camera.crosswalk_roi, self.ser
-            )
+           
+            camera_bottom_frame, detected_crosswalk = self.crosswalk_detector.process_frame(camera_bottom_frame, self.bottom_camera.crosswalk_roi, self.ser)
             
-            
-            # trafficlight
-            camera_bottom_frame, color = self.trafficlight_detector.trafficlight_detection(camera_bottom_frame)
-            print(color) if color !="no light" else None # center 0
-            # apriltag
-            label = apriltag_detection(camera_bottom_frame)
-            print(label) if label !="no sign" else None
+            if detected_crosswalk:
+
+                # trafficlight
+                camera_bottom_frame, color = self.trafficlight_detector.trafficlight_detection(camera_bottom_frame)
+                # print(color) if color !="no light" else None # center 0
+                # apriltag
+                label = apriltag_detection(camera_bottom_frame)
+                print(label) if label !="no sign" else None
+                
+                if label != "no sign":
+                    self.ser.send("intersection"+" "+ label)  # --- attention!! not implemented yet. . .                  
 
             # lane
-            camera_bottom_frame = self.lane_detector.detect(camera_bottom_frame)
+            if not detected_crosswalk:
+                camera_bottom_frame = self.lane_detector.detect(camera_bottom_frame)
+            else:
+                self.ser.send("center")
+                
             cv2.imshow("",camera_bottom_frame)
             
             if cv2.waitKey(1) & 0xFF == ord('q'):
