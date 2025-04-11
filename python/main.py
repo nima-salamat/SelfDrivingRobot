@@ -17,7 +17,7 @@ class Robot:
         # Cameras
         self.top_camera = Camera(1) # top --- attention!!! --- not implemented!!!
         self.bottom_camera = CameraBottom(
-            "D:\\div_5\\open_cv\\video_2025-02-15_11-43-46.mp4"
+            0
         ) # bottom
          
         # Detectors
