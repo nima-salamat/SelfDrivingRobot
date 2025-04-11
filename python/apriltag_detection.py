@@ -1,48 +1,46 @@
 import math
-import apriltag
+from apriltag import Detector
 import cv2
 from config import TAG_LABLES, MIN_SIZE_APRILTAG
 
 
+class ApriltagDetector:
+    def __init__(self, families="tag36h11"):
+        self.detector = Detector(families=families)
 
+    def detect(self, frame):
+        # Convert the frame to grayscale
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
+        # Detect AprilTags in the frame
+        detections = self.detector.detect(gray)
 
-detector = Detector(families="tag36h11")
-
-
-def apriltag_detection(frame):
-    # Convert the frame to grayscale
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-    # Detect AprilTags in the frame
-    detections = detector.detect(gray, estimate_tag_pose=False)
-
-    # Find the nearest apriltag
-    main_size = 0
-    nearest_apriltag = None
-    for detection in detections:
-        corners = [detection.corners.astype(int)]
-        dot1 = [corners[0][0][0], corners[0][0][1]]
-        dot2 = [corners[0][2][0], corners[0][2][1]]
-        size = int(math.dist(dot2, dot1))
+        # Find the nearest apriltag
+        main_size = 0
+        nearest_apriltag = None
+        for detection in detections:
+            # Calculate the size of the detected tag (distance between two corners)
+            dot1 = detection.corners[0]
+            dot2 = detection.corners[2]
+            size = int(math.dist(dot1, dot2))
 
             if size >= MIN_SIZE_APRILTAG:
                 if size > main_size:
                     nearest_apriltag = detection
                     main_size = size
 
-    # Show nearest apriltag
-    label = "no sign"
-    if nearest_apriltag is not None:
-        cv2.polylines(
-            frame, [nearest_apriltag.corners.astype(int)], True, (240, 130, 50), 2
-        )
+        # Show nearest apriltag
+        label = "no sign"
+        if nearest_apriltag is not None:
+            # Draw the bounding box of the tag
+            cv2.polylines(
+                frame, [nearest_apriltag.corners.astype(int)], True, (240, 130, 50), 2
+            )
 
             # Find label and get order
             try:
                 label = TAG_LABLES[nearest_apriltag.tag_id]
             except Exception:
                 pass
-
 
         return label
