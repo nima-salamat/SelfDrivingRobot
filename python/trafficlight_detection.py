@@ -58,7 +58,7 @@ class TrafficLightDetector:
         self.normalized_roi = normalized_roi
         self.roi_vertices = normalized_roi_to_vertices(normalized_roi, width, height)
 
-    def trafficlight_detection(self, frame):
+    def detect(self, frame):
         """
         Detects traffic lights in the given frame within the specified ROI.
         Converts the frame to HSV, applies a color threshold for red and green,

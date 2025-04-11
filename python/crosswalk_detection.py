@@ -82,7 +82,7 @@ class CrosswalkDetector:
         """
         return (len(horizontal_lines) >= min_horiz) or (len(vertical_lines) >= min_vert)
 
-    def process_frame(self, frame, roi, ser):
+    def detect(self, frame, roi, ser):
         """
         Process the frame to detect a crosswalk.
         The crosswalk event is sent only once until it disappears for a set number
