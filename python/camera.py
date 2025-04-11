@@ -1,4 +1,6 @@
 import cv2
+from picamera2 import Picamera2
+import time
 from config import (TARGET_FPS,
                     ROI_Y_START_FRAC,
                     ROI_X_START_FRAC,
@@ -8,11 +10,12 @@ from config import (TARGET_FPS,
                     CAMERA_HEIGHT
                     )
 
+
 # Initialize camera capture
 def initialize_camera(index=0, width=480, height=240):
     
     # cap = cv2.VideoCapture(CAMERA_INDEX)
-    cap = cv2.VideoCapture(index)
+    cap = cv2.VideoCapture(index, format="bgr")
     if not cap.isOpened():
         print("Error: Could not open camera.")
         exit()
@@ -64,4 +67,39 @@ class CameraBottom(Camera):
         if not ret:
             return ret, frame
         roi = frame[self.ROI_Y_START:self.ROI_Y_END, self.ROI_X_START:self.ROI_X_END]
-        return roi
+        return ret, roi
+    
+class CameraTop:
+    class cap_:
+        def __init__(self, picam):
+            self.picam = picam
+            self.is_open = False
+            
+        def read(self):
+            try:
+                frame = self.picam.capture_array()
+                frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+                return True, frame_bgr
+            except Exception as e:
+                print(f"Error capturing frame: {e}")
+                return False, None
+            
+        def release(self):
+            if self.is_open:
+                self.picam.stop()
+                self.is_open = False
+    def __init__(self):
+       # Initialize the camera
+        picam2 = Picamera2()
+
+        # Configure camera (preview configuration is good for live video)
+        config = picam2.create_preview_configuration(main={"size": (CAMERA_WIDTH, CAMERA_HEIGHT)})
+        picam2.configure(config)
+
+        # Start the camera
+        picam2.start() 
+        self.picam = picam2
+        self.cap = self.cap_(self.picam)
+        self.cap.is_open = True
+        
+    

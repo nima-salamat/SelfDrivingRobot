@@ -1,6 +1,6 @@
 import cv2
 import time
-from camera import CameraBottom, Camera
+from camera import CameraBottom, CameraTop
 from config import FRAME_DELAY
 from lane_detection import LaneDetector
 from crosswalk_detection import CrosswalkDetector
@@ -15,7 +15,7 @@ class Robot:
         self.ser = serial_connector.connect()
         
         # Cameras
-        self.top_camera = Camera(1) # top --- attention!!! --- not implemented!!!
+        self.top_camera = CameraTop() # top --- attention!!! --- not implemented!!!
         self.bottom_camera = CameraBottom(
             0
         ) # bottom
