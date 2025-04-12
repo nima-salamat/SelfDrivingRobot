@@ -15,7 +15,11 @@ class Robot:
         self.ser = serial_connector.connect()
         
         # Cameras
-        self.usb_camera = UsbCamera(0)  # bottom
+        self.usb_camera = UsbCamera(
+            # "D:/div_5/open_cv/video_2025-02-15_11-43-46.mp4"
+            1
+        )# UsbCamera(0)  # bottom
+        
 
         self.pi_camera = UsbCamera(1) # PiCamera()
         # Detectors
@@ -24,26 +28,26 @@ class Robot:
             self.pi_camera.height,
             normalized_roi=[[0, 0.5], [0, 0.5]],
         )
-        self.crosswalk_detector = CrosswalkDetector()
+        self.crosswalk_detector = CrosswalkDetector(debug=True)
         self.lane_detector = LaneDetector(self.usb_camera, self.ser)
         self.apriltag_detector = ApriltagDetector()
 
     def autorun(self):
         
         while True:
-            ret, pi_camera_frame = self.pi_camera.cap.read()
             ret, usb_camera_frame = self.usb_camera.cap.read()
-
-           
-            usb_camera_frame, detected_crosswalk = self.crosswalk_detector.detect(usb_camera_frame, self.usb_camera.crosswalk_roi, self.ser)
+          
             
+            usb_camera_frame, detected_crosswalk = self.crosswalk_detector.detect(usb_camera_frame, self.usb_camera.crosswalk_roi, self.ser)
+           
+
             if detected_crosswalk:
                 ret, pi_camera_frame = self.pi_camera.cap.read()
 
                 # trafficlight
                 pi_camera_frame, color = self.trafficlight_detector.detect(pi_camera_frame)
                 print(color) if color !="no light" else None # center 0
-                # apriltag
+                #apriltag
                 label = self.apriltag_detector.detect(pi_camera_frame)
                 print(label) if label !="no sign" else None
                 
@@ -56,7 +60,7 @@ class Robot:
             else:
                 self.ser.send("center")
                 
-            # cv2.imshow("usb",usb_camera_frame)
+            cv2.imshow("usb",usb_camera_frame)
             # cv2.imshow("pi",pi_camera_frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):

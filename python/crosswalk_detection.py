@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 from collections import deque
-
+from config import BLUR_KERNEL
 
 class CrosswalkDetector:
     def __init__(
@@ -22,18 +22,27 @@ class CrosswalkDetector:
     def preprocess_frame(self, frame, roi):
         x, y, w, h = roi
         cropped = frame[y : y + h, x : x + w]
-        hsv = cv2.cvtColor(cropped, cv2.COLOR_BGR2HSV)
-        lower_white = np.array([0, 0, 200])
-        upper_white = np.array([255, 30, 255])
-        mask = cv2.inRange(hsv, lower_white, upper_white)
-        return cropped, mask
+        gray = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
+        blur = cv2.GaussianBlur(gray, (BLUR_KERNEL, BLUR_KERNEL), 0)
+        # hsv = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
+        # cv2.imshow("hsv", hsv)
+        # lower_white = np.array([0, 0, 200])
+        # upper_white = np.array([255, 30, 255])
+        # mask = cv2.inRange(blur, lower_white, upper_white)
+        
+        cv2.imshow("mask", blur)
+    
+        return cropped, blur
 
     def detect_edges(self, mask):
-        return cv2.Canny(mask, 50, 150)
+        a = cv2.Canny(mask, 50, 255)
+        cv2.imshow("canny", a)
+        return a
+    
 
     def detect_lines(self, edges):
         return cv2.HoughLinesP(
-            edges, 1, np.pi / 180, 50, minLineLength=50, maxLineGap=100
+            edges, 1, np.pi / 180, 30, minLineLength=10, maxLineGap=100
         )
 
     def filter_lines_by_angle(self, lines):
@@ -42,9 +51,9 @@ class CrosswalkDetector:
             for line in lines:
                 x1, y1, x2, y2 = line[0]
                 angle = np.degrees(np.arctan2(y2 - y1, x2 - x1))
-                if abs(angle) < 15:
+                if abs(angle) < 30:
                     horizontal_lines.append((x1, y1, x2, y2))
-                elif abs(abs(angle) - 90) < 15:
+                elif abs(abs(angle) - 90) < 30:
                     vertical_lines.append((x1, y1, x2, y2))
         return horizontal_lines, vertical_lines
 
@@ -103,3 +112,4 @@ class CrosswalkDetector:
             )
 
         return frame, confirmed_detection
+

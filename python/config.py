@@ -39,7 +39,7 @@ FIXED_CENTER = 315
 
 # Camera and production settings
 CAMERA_INDEX = 0
-TARGET_FPS = 45
+TARGET_FPS = 30
 FRAME_DELAY = 1 / TARGET_FPS
 
 # Serial port settings

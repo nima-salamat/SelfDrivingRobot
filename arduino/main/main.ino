@@ -151,8 +151,10 @@ void loop()
           // Determine Servo Angle based on steering command
           int servoAngle = lastServoAngle; // Start from the last known angle
           if (steeringCommand.equalsIgnoreCase("crosswalk"))
-          {
+          {  
+            setMotorSpeed(0, 0);
             delay(4000);
+
           }
           if (steeringCommand.equalsIgnoreCase("sharp left"))
           {
