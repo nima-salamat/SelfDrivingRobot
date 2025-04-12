@@ -1,11 +1,12 @@
 import cv2
 import time
-from camera import UsbCamera, PiCamera
+from camera import UsbCamera, PiCamera, CameraDevices
 from config import FRAME_DELAY
 from lane_detection import LaneDetector
 from crosswalk_detection import CrosswalkDetector
 from trafficlight_detection import TrafficLightDetector
 from apriltag_detection import ApriltagDetector
+import usb.core
 import serial_connector
 import sys
 
@@ -14,22 +15,25 @@ class Robot:
     def __init__(self, args):
         # Check debug value
         if (len(args) > 2 and
-            args[0] in ["debug", "DEBUG", "Debug"] and
+            args[1] in ["debug", "DEBUG", "Debug"] and
             args[2] in ["True", "true", "1", "y", "active"]):
             self.debug = True
         else:
             self.debug = False
+            
         # Serial
         self.ser = serial_connector.connect()
-        
-        # Cameras
-        self.usb_camera = UsbCamera(
-            # "D:/div_5/open_cv/video_2025-02-15_11-43-46.mp4"
-            1
-        )# UsbCamera(0)  # bottom
-        
 
-        self.pi_camera = UsbCamera(0) # PiCamera()
+        # Cameras
+        try:
+            self.usb_camera = UsbCamera(CameraDevices.get_address(0))  
+            # "D:/div_5/open_cv/video_2025-02-15_11-43-46.mp4"
+            self.pi_camera = UsbCamera(CameraDevices.get_address(1)) # PiCamera()
+        except usb.core.NoBackendError:
+            # Cameras
+            self.usb_camera = UsbCamera(0) 
+            self.pi_camera = UsbCamera(1) # PiCamera()
+       
         # Detectors
         self.trafficlight_detector = TrafficLightDetector(
             self.pi_camera.width,

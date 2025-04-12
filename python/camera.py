@@ -4,6 +4,8 @@ try:
 except Exception:
     print("we cant import picamera2 in windows :D")
 import time
+import usb.core
+import usb.util
 from config import (TARGET_FPS,
                     ROI_Y_START_FRAC,
                     ROI_X_START_FRAC,
@@ -107,3 +109,41 @@ class PiCamera:
         self.width = CAMERA_WIDTH
         self.height = CAMERA_HEIGHT
         
+
+class CameraDevices:
+    camera_name_index = {0: "webcam c270", 1: "sony playstation eye"}
+    camera_devices = {"webcam c270":None, "sony playstation eye":None}
+    
+    @classmethod
+    def find_device_by_name(cls, device_name):
+        # Find all connected USB devices
+        devices = usb.core.find(find_all=True)
+        
+        for dev in devices:
+            try:
+                # Get the device's product name
+                product = usb.util.get_string(dev, dev.iProduct)
+                
+                # Check if the name matches (case insensitive)
+                if product and device_name.lower() in product.lower():
+                    print(f"Found device: {product} (VendorID: 0x{dev.idVendor:04x}, ProductID: 0x{dev.idProduct:04x})")
+                    cls.camera_devices[device_name] = dev.address
+                    return dev
+                    
+            except (usb.core.USBError, ValueError, IndexError) as e:
+                continue
+        
+        return None
+    
+    @classmethod
+    def are_activated(cls):
+        if all([cls.find_device_by_name(name) for name in cls.camera_devices]):
+            return True
+        return False
+    
+    @classmethod
+    def get_address(cls, index):
+        device_name = cls.camera_name_index[index]
+        cls.find_device_by_name(device_name)
+        return cls.camera_devices.get(device_name)
+    
