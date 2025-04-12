@@ -5,8 +5,8 @@ from config import TAG_LABLES, MIN_SIZE_APRILTAG
 
 
 class ApriltagDetector:
-    def __init__(self, families="tag36h11"):
-        self.detector = Detector(families=families)
+    def __init__(self):
+        self.detector = Detector()
 
     def detect(self, frame):
         # Convert the frame to grayscale
