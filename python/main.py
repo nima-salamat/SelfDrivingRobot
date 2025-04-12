@@ -21,11 +21,11 @@ class Robot:
         # Detectors
         self.trafficlight_detector = TrafficLightDetector(
             self.pi_camera.width,
-            self.usb_camera.height,
+            self.pi_camera.height,
             normalized_roi=[[0, 0.5], [0, 0.5]],
         )
         self.crosswalk_detector = CrosswalkDetector()
-        self.lane_detector = LaneDetector(self.pi_camera, self.ser)
+        self.lane_detector = LaneDetector(self.usb_camera, self.ser)
         self.apriltag_detector = ApriltagDetector()
 
     def autorun(self):
@@ -35,13 +35,13 @@ class Robot:
             ret, usb_camera_frame = self.usb_camera.cap.read()
 
            
-            usb_camera_frame, detected_crosswalk = self.crosswalk_detector.detect(usb_camera_frame, self.pi_camera.crosswalk_roi, self.ser)
+            usb_camera_frame, detected_crosswalk = self.crosswalk_detector.detect(usb_camera_frame, self.usb_camera.crosswalk_roi, self.ser)
             
             if detected_crosswalk:
 
                 # trafficlight
                 pi_camera_frame, color = self.trafficlight_detector.detect(pi_camera_frame)
-                # print(color) if color !="no light" else None # center 0
+                print(color) if color !="no light" else None # center 0
                 # apriltag
                 label = self.apriltag_detector.detect(pi_camera_frame)
                 print(label) if label !="no sign" else None

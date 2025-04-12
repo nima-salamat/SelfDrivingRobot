@@ -26,7 +26,7 @@ class LaneDetector:
         self.camera = camera
         # Initialize lane tracking variables
         self.LANE_CENTER_HISTORY = []
-        self.previous_lane_center = self.camera.width / 2
+        self.previous_lane_center = self.camera.width // 2
         self.ser = ser
     
     def detect(self, frame):
