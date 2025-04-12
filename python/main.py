@@ -38,6 +38,7 @@ class Robot:
             usb_camera_frame, detected_crosswalk = self.crosswalk_detector.detect(usb_camera_frame, self.usb_camera.crosswalk_roi, self.ser)
             
             if detected_crosswalk:
+                ret, pi_camera_frame = self.pi_camera.cap.read()
 
                 # trafficlight
                 pi_camera_frame, color = self.trafficlight_detector.detect(pi_camera_frame)
@@ -55,8 +56,8 @@ class Robot:
             else:
                 self.ser.send("center")
                 
-            cv2.imshow("usb",usb_camera_frame)
-            cv2.imshow("pi",pi_camera_frame)
+            # cv2.imshow("usb",usb_camera_frame)
+            # cv2.imshow("pi",pi_camera_frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
