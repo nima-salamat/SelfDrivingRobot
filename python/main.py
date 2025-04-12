@@ -15,11 +15,9 @@ class Robot:
         self.ser = serial_connector.connect()
         
         # Cameras
-        self.top_camera = CameraTop() # top --- attention!!! --- not implemented!!!
-        self.bottom_camera = CameraBottom(
-            0
-        ) # bottom
-         
+        self.top_camera = CameraBottom(0)  # bottom
+
+        self.bottom_camera = CameraTop()
         # Detectors
         self.trafficlight_detector = TrafficLightDetector(
             self.bottom_camera.width,
