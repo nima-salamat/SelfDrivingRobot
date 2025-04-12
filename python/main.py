@@ -51,12 +51,13 @@ class Robot:
 
             # lane
             if not detected_crosswalk:
-                camera_bottom_frame = self.lane_detector.detect(usb_camera_frame)
+                usb_camera_frame = self.lane_detector.detect(usb_camera_frame)
             else:
                 self.ser.send("center")
                 
-            cv2.imshow("",camera_bottom_frame)
-            
+            cv2.imshow("usb",usb_camera_frame)
+            cv2.imshow("pi",pi_camera_frame)
+
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
             time.sleep(FRAME_DELAY)
