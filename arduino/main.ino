@@ -1,31 +1,31 @@
 #include <Servo.h>
 // ----------- Pin Definitions -----------
 // L298P Motor A (Left Motor)
-const int MotorA1 = 12;  // IN1
-const int MotorA2 = 3;   // IN2
-const int APWM    = 10;  // ENA (PWM control)
+const int MotorA1 = 12; // IN1
+const int MotorA2 = 3;  // IN2
+const int APWM = 10;    // ENA (PWM control)
 
 // L298P Motor B (Right Motor)
-const int MotorB1 = 13;  // IN3
-const int MotorB2 = 8;   // IN4
-const int BPWM    = 11;  // ENB (PWM control)
+const int MotorB1 = 13; // IN3
+const int MotorB2 = 8;  // IN4
+const int BPWM = 11;    // ENB (PWM control)
 
 // Servo and Ultrasonic Sensor
-const int servoPin       = 9;  
+const int servoPin = 9;
 const int ultrasonicTrig = 7;
 const int ultrasonicEcho = 6;
 
 // Control Parameters
-int normalSpeed = 130;            // Default speed
-const int OBSTACLE_THRESHOLD = 15; 
+int normalSpeed = 130; // Default speed
+const int OBSTACLE_THRESHOLD = 15;
 
 // Servo angle mapping
-const int ANGLE_SHARP_LEFT  = 40;
-const int ANGLE_MID_LEFT    = 65;
-const int ANGLE_SLOW_LEFT   = 85;
-const int ANGLE_CENTER      = 97;
-const int ANGLE_SLOW_RIGHT  = 115;
-const int ANGLE_MID_RIGHT   = 135;
+const int ANGLE_SHARP_LEFT = 40;
+const int ANGLE_MID_LEFT = 65;
+const int ANGLE_SLOW_LEFT = 85;
+const int ANGLE_CENTER = 97;
+const int ANGLE_SLOW_RIGHT = 115;
+const int ANGLE_MID_RIGHT = 135;
 const int ANGLE_SHARP_RIGHT = 160;
 
 // Global Variables
@@ -33,9 +33,10 @@ bool ultrasonicEnabled = false;
 String receivedCommand = "";
 String previousCommand = "";
 Servo myServo;
-int lastServoAngle = ANGLE_CENTER;  // Keeps track of the last servo angle
+int lastServoAngle = ANGLE_CENTER; // Keeps track of the last servo angle
 
-void setup() {
+void setup()
+{
   Serial.begin(9600);
   Serial.println("Arduino Lane Follower started with L298P Motor Shield.");
   Serial.println("Expected commands: 'steering speed' (e.g., 'sharp left 125'), 'ultrasonic on/off'");
@@ -59,7 +60,8 @@ void setup() {
 }
 
 // Function to measure distance using the ultrasonic sensor (in cm)
-long measureDistance() {
+long measureDistance()
+{
   digitalWrite(ultrasonicTrig, LOW);
   delayMicroseconds(2);
   digitalWrite(ultrasonicTrig, HIGH);
@@ -71,25 +73,36 @@ long measureDistance() {
 }
 
 // Motor Control Function
-void setMotorSpeed(int leftSpeed, int rightSpeed) {
-  if (leftSpeed > 0) {
+void setMotorSpeed(int leftSpeed, int rightSpeed)
+{
+  if (leftSpeed > 0)
+  {
     digitalWrite(MotorA1, LOW);
     digitalWrite(MotorA2, HIGH);
-  } else if (leftSpeed < 0) {
+  }
+  else if (leftSpeed < 0)
+  {
     digitalWrite(MotorA1, HIGH);
     digitalWrite(MotorA2, LOW);
-  } else {
+  }
+  else
+  {
     digitalWrite(MotorA1, LOW);
     digitalWrite(MotorA2, LOW);
   }
 
-  if (rightSpeed > 0) {
+  if (rightSpeed > 0)
+  {
     digitalWrite(MotorB1, LOW);
     digitalWrite(MotorB2, HIGH);
-  } else if (rightSpeed < 0) {
+  }
+  else if (rightSpeed < 0)
+  {
     digitalWrite(MotorB1, HIGH);
     digitalWrite(MotorB2, LOW);
-  } else {
+  }
+  else
+  {
     digitalWrite(MotorB1, LOW);
     digitalWrite(MotorB2, LOW);
   }
@@ -98,28 +111,37 @@ void setMotorSpeed(int leftSpeed, int rightSpeed) {
   analogWrite(BPWM, abs(rightSpeed));
 }
 
-void loop() {
+void loop()
+{
   // Read Serial Command
-  if (Serial.available() > 0) {
+  if (Serial.available() > 0)
+  {
     receivedCommand = Serial.readStringUntil('\n');
     receivedCommand.trim();
-    
-    if (receivedCommand.equalsIgnoreCase("ultrasonic on")) {
+
+    if (receivedCommand.equalsIgnoreCase("ultrasonic on"))
+    {
       ultrasonicEnabled = true;
       Serial.println("Ultrasonic enabled.");
-    } else if (receivedCommand.equalsIgnoreCase("ultrasonic off")) {
+    }
+    else if (receivedCommand.equalsIgnoreCase("ultrasonic off"))
+    {
       ultrasonicEnabled = false;
       Serial.println("Ultrasonic disabled.");
-    } else {
+    }
+    else
+    {
       // Parse the command for steering and speed
       int spaceIndex = receivedCommand.lastIndexOf(' ');
-      if (spaceIndex != -1) {
+      if (spaceIndex != -1)
+      {
         String steeringCommand = receivedCommand.substring(0, spaceIndex);
         String speedStr = receivedCommand.substring(spaceIndex + 1);
         int newSpeed = speedStr.toInt();
 
         // Validate speed
-        if (newSpeed >= 0 && newSpeed <= 255) {
+        if (newSpeed >= 0 && newSpeed <= 255)
+        {
           normalSpeed = newSpeed;
           Serial.print("Received command: ");
           Serial.print(steeringCommand);
@@ -128,26 +150,47 @@ void loop() {
 
           // Determine Servo Angle based on steering command
           int servoAngle = lastServoAngle; // Start from the last known angle
-          
-          if (steeringCommand.equalsIgnoreCase("sharp left")) {
+          if (steeringCommand.equalsIgnoreCase("crosswalk"))
+          {
+            delay(4000);
+          }
+          if (steeringCommand.equalsIgnoreCase("sharp left"))
+          {
             servoAngle = ANGLE_SHARP_LEFT;
-          } else if (steeringCommand.equalsIgnoreCase("mid left")) {
+          }
+          else if (steeringCommand.equalsIgnoreCase("mid left"))
+          {
             servoAngle = ANGLE_MID_LEFT;
-          } else if (steeringCommand.equalsIgnoreCase("slow left")) {
+          }
+          else if (steeringCommand.equalsIgnoreCase("slow left"))
+          {
             servoAngle = ANGLE_SLOW_LEFT;
-          } else if (steeringCommand.equalsIgnoreCase("sharp right")) {
+          }
+          else if (steeringCommand.equalsIgnoreCase("sharp right"))
+          {
             servoAngle = ANGLE_SHARP_RIGHT;
-          } else if (steeringCommand.equalsIgnoreCase("mid right")) {
+          }
+          else if (steeringCommand.equalsIgnoreCase("mid right"))
+          {
             servoAngle = ANGLE_MID_RIGHT;
-          } else if (steeringCommand.equalsIgnoreCase("slow right")) {
+          }
+          else if (steeringCommand.equalsIgnoreCase("slow right"))
+          {
             servoAngle = ANGLE_SLOW_RIGHT;
-          } else if (steeringCommand.equalsIgnoreCase("center")) {
+          }
+          else if (steeringCommand.equalsIgnoreCase("center"))
+          {
             // Adjust center based on the last servo position
-            if (lastServoAngle == ANGLE_SHARP_RIGHT) {
-              servoAngle = ANGLE_CENTER - 10;  // Move 10° to the right
-            } else if (lastServoAngle == ANGLE_SHARP_LEFT) {
-              servoAngle = ANGLE_CENTER + 10;  // Move 10° to the left
-            } else {
+            if (lastServoAngle == ANGLE_SHARP_RIGHT)
+            {
+              servoAngle = ANGLE_CENTER - 10; // Move 10° to the right
+            }
+            else if (lastServoAngle == ANGLE_SHARP_LEFT)
+            {
+              servoAngle = ANGLE_CENTER + 10; // Move 10° to the left
+            }
+            else
+            {
               servoAngle = ANGLE_CENTER;
             }
           }
@@ -155,38 +198,44 @@ void loop() {
           // Write the new servo angle and update the last known angle
           myServo.write(servoAngle);
           lastServoAngle = servoAngle;
-        } else {
+        }
+        else
+        {
           Serial.println("Invalid speed value. Use a number between 0 and 255.");
         }
-      } else {
+      }
+      else
+      {
         Serial.println("Invalid command format. Expected: 'steering speed' (e.g., 'sharp left 125')");
       }
     }
-    
+
     // Save the command and clear it
-    if (receivedCommand != "") {
+    if (receivedCommand != "")
+    {
       previousCommand = receivedCommand;
       receivedCommand = "";
     }
   }
-  
+
   // Motor Speed Control
   int motorSpeed = normalSpeed;
-  if (ultrasonicEnabled) {
+  if (ultrasonicEnabled)
+  {
     long distance = measureDistance();
     Serial.print("Distance: ");
     Serial.print(distance);
     Serial.println(" cm");
-    
-    if (distance > 0 && distance < OBSTACLE_THRESHOLD) {
+
+    if (distance > 0 && distance < OBSTACLE_THRESHOLD)
+    {
       motorSpeed = 0;
       Serial.println("Obstacle detected! Motor stopped.");
-      
     }
   }
-  
+
   // Apply Motor Speed to both motors
   setMotorSpeed(motorSpeed, motorSpeed);
-  
+
   delay(50);
 }
