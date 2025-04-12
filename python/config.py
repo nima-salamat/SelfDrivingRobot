@@ -52,6 +52,57 @@ CAMERA_BOTTOM_INDEX = 0  # ----------- attention!!
 CAMERA_WIDTH = 480
 CAMERA_HEIGHT = 240
 
+
+class MODE:
+    """Speed Modes"""
+    class Turbo: 
+        """Fast"""
+        forward = 180
+        turn = 140
+    class Economy:
+        """Medium Fast"""
+        forward = 160
+        turn = 130
+    class Center:
+        """Medium"""
+        forward = 150
+        turn = 130
+    class Trot: 
+        """Medium Slow"""
+        forward = 140
+        turn = 120
+    
+    class Walk: 
+        """Slow"""
+        forward = 120
+        turn = 100
+    
+    class Snail:
+        """Very Slow"""
+        forward = 110
+        turn = 90
+    
+    default = Trot
+    @classmethod
+    def set(cls, class_):
+        cls.default = class_
+        
+    @classmethod  
+    def get(cls):
+        return cls.default
+    
+    @classmethod
+    def custom_mode(cls, forward, turn, set=True):
+        if type(forward) is type(turn) is int:
+            custom_speed = type("CustomSpeed", (), {"forward": forward, "turn": turn})
+            if set:
+                cls.default = custom_speed
+            return cls.default
+    
+        else:
+            raise ValueError("forward and turn must be <class:int>")
+    
+
 # -------------------------------------------------------
 
 # Apriltag Variables

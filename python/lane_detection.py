@@ -15,6 +15,7 @@ from config import (
     THRESHOLD_SHARP,
     THRESHOLD_SLOW,
     FIXED_CENTER,
+    MODE
 )
 
 
@@ -150,7 +151,8 @@ class LaneDetector:
             steering_command = "center"
 
         # Set speed based on steering command
-        speed = 140 if steering_command == "sharp left" else 160
+        speed = MODE.default.turn if "sharp" in steering_command else MODE.default.forward
+        
 
         # Build full command string and send it via serial
         full_command = f"{steering_command} {speed}"
