@@ -30,10 +30,6 @@ class LaneDetector:
         self.ser = ser
     
     def detect(self, frame):
-        
-
-        
-
         # Preprocess image
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         blur = cv2.GaussianBlur(gray, (BLUR_KERNEL, BLUR_KERNEL), 0)
