@@ -24,22 +24,11 @@ class CrosswalkDetector:
         cropped = frame[y : y + h, x : x + w]
         gray = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
         blur = cv2.GaussianBlur(gray, (BLUR_KERNEL, BLUR_KERNEL), 0)
-        # hsv = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
-        # cv2.imshow("hsv", hsv)
-        # lower_white = np.array([0, 0, 200])
-        # upper_white = np.array([255, 30, 255])
-        # mask = cv2.inRange(blur, lower_white, upper_white)
-        
-        cv2.imshow("mask", blur)
-    
         return cropped, blur
 
     def detect_edges(self, mask):
-        a = cv2.Canny(mask, 50, 255)
-        cv2.imshow("canny", a)
-        return a
-    
-
+        return cv2.Canny(mask, 50, 255)
+        
     def detect_lines(self, edges):
         return cv2.HoughLinesP(
             edges, 1, np.pi / 180, 30, minLineLength=10, maxLineGap=100
@@ -112,4 +101,3 @@ class CrosswalkDetector:
             )
 
         return frame, confirmed_detection
-

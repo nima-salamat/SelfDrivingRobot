@@ -35,8 +35,3 @@ class ArduinoSerialConnector(Arduino):
             self.ser.close()
 def connect(*args):
     return ArduinoSerialConnector(*args)
-
-
-
-    
-
