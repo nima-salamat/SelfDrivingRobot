@@ -43,7 +43,7 @@ class Camera:
         self.cap, self.width, self.height = result    
 
         
-class CameraBottom(Camera):
+class UsbCamera(Camera):
     def __init__(self, index):
         super().__init__(index)
         self.initialize_fixed_roi()
@@ -69,7 +69,7 @@ class CameraBottom(Camera):
         roi = frame[self.ROI_Y_START:self.ROI_Y_END, self.ROI_X_START:self.ROI_X_END]
         return ret, roi
     
-class CameraTop:
+class PiCamera:
     class cap_:
         def __init__(self, picam):
             self.picam = picam
