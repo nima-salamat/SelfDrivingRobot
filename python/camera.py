@@ -1,5 +1,8 @@
 import cv2
-from picamera2 import Picamera2
+try:
+    from picamera2 import Picamera2
+except Exception:
+    print("we cant import picamera2 in windows :D")
 import time
 from config import (TARGET_FPS,
                     ROI_Y_START_FRAC,
@@ -53,7 +56,7 @@ class UsbCamera(Camera):
             self.width // 4,
             (3 * self.height) // 5,
             self.width // 2,
-            self.height // 5,
+            (2 * self.height) // 5,
         )
         self.ROI_Y_START = int(self.height * ROI_Y_START_FRAC)
         self.ROI_Y_END = int(self.height * 1.0)

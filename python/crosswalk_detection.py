@@ -7,8 +7,8 @@ class CrosswalkDetector:
     def __init__(
         self,
         no_detection_threshold=1,
-        history_length=15,
-        min_history_detections=10,
+        history_length=5,
+        min_history_detections=3,
         debug=False,
     ):
         self.crosswalk_sent = False

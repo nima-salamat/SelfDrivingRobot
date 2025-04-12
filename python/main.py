@@ -21,15 +21,15 @@ class Robot:
         )# UsbCamera(0)  # bottom
         
 
-        self.pi_camera = UsbCamera(1) # PiCamera()
+        self.pi_camera = UsbCamera(0) # PiCamera()
         # Detectors
         self.trafficlight_detector = TrafficLightDetector(
             self.pi_camera.width,
             self.pi_camera.height,
-            normalized_roi=[[0, 0.5], [0, 0.5]],
+            normalized_roi=[[0.5, 0], [0.5, 0]],
         )
         self.crosswalk_detector = CrosswalkDetector(debug=True)
-        self.lane_detector = LaneDetector(self.usb_camera, self.ser)
+        self.lane_detector = LaneDetector(self.usb_camera, self.ser, debug=True)
         self.apriltag_detector = ApriltagDetector()
 
     def autorun(self):
