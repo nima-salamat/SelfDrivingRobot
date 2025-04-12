@@ -13,7 +13,7 @@
 
 # # Initialize camera capture
 # def initialize_camera(index=0, width=480, height=240):
-
+    
 #     # cap = cv2.VideoCapture(CAMERA_INDEX)
 #     cap = cv2.VideoCapture(index)
 #     if not cap.isOpened():
@@ -33,21 +33,21 @@
 #     else:
 #         print("Error reading from camera.")
 #         exit()
-
+        
 #     return cap, width, height
 
 
 # class Camera:
 #     def __init__(self, index=0, width=CAMERA_WIDTH, height=CAMERA_HEIGHT):
 #         result = initialize_camera(index, width, height)
-#         self.cap, self.width, self.height = result
+#         self.cap, self.width, self.height = result    
 
-
+        
 # class CameraBottom(Camera):
 #     def __init__(self, index):
 #         super().__init__(index)
 #         self.initialize_fixed_roi()
-
+        
 #     def initialize_fixed_roi(self):
 #         self.crosswalk_roi = (
 #             self.width // 4,
@@ -61,20 +61,20 @@
 #         self.ROI_X_END = int(self.width * ROI_X_END_FRAC)
 #         self.ROI_WIDTH = self.ROI_X_END - self.ROI_X_START
 #         self.LANE_WIDTH = int(self.width * LANE_WIDTH_FRAC)
-
+        
 #     def read(self):
 #         ret, frame = self.cap.read()
 #         if not ret:
 #             return ret, frame
 #         roi = frame[self.ROI_Y_START:self.ROI_Y_END, self.ROI_X_START:self.ROI_X_END]
 #         return ret, roi
-
+    
 # class CameraTop:
 #     class cap_:
 #         def __init__(self, picam):
 #             self.picam = picam
 #             self.is_open = False
-
+            
 #         def read(self):
 #             try:
 #                 frame = self.picam.capture_array()
@@ -83,7 +83,7 @@
 #             except Exception as e:
 #                 print(f"Error capturing frame: {e}")
 #                 return False, None
-
+            
 #         def release(self):
 #             if self.is_open:
 #                 self.picam.stop()
@@ -97,14 +97,13 @@
 #         picam2.configure(config)
 
 #         # Start the camera
-#         picam2.start()
+#         picam2.start() 
 #         self.picam = picam2
 #         self.cap = self.cap_(self.picam)
 #         self.cap.is_open = True
 #         self.width = CAMERA_WIDTH
 #         self.height = CAMERA_HEIGHT
-
-
+        
 import cv2
 from picamera2 import Picamera2
 import time
@@ -134,7 +133,7 @@ class CameraBase:
     def resolution(self) -> Tuple[int, int]:
         return (self._width, self._height)
 
-    def read(self) -> Tuple[bool, Optional[np.ndarray]]:
+    def read(self):
         raise NotImplementedError
 
     def release(self):
@@ -181,7 +180,7 @@ class USBCamera(CameraBase):
                 f"Failed to initialize USB camera after {max_retries} attempts"
             )
 
-    def read(self) -> Tuple[bool, Optional[np.ndarray]]:
+    def read(self):
         if not self._is_open:
             return False, None
 
@@ -216,7 +215,7 @@ class PiCamera(CameraBase):
             self._is_open = False
             raise RuntimeError(f"PiCamera initialization failed: {str(e)}")
 
-    def read(self) -> Tuple[bool, Optional[np.ndarray]]:
+    def read(self) :
         if not self._is_open:
             return False, None
 
