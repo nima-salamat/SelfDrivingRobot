@@ -15,7 +15,7 @@ from config import (TARGET_FPS,
 def initialize_camera(index=0, width=480, height=240):
     
     # cap = cv2.VideoCapture(CAMERA_INDEX)
-    cap = cv2.VideoCapture(index, format="bgr")
+    cap = cv2.VideoCapture(index)
     if not cap.isOpened():
         print("Error: Could not open camera.")
         exit()
@@ -101,5 +101,6 @@ class CameraTop:
         self.picam = picam2
         self.cap = self.cap_(self.picam)
         self.cap.is_open = True
+        self.width = CAMERA_WIDTH
+        self.height = CAMERA_HEIGHT
         
-    
