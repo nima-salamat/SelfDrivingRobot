@@ -80,10 +80,10 @@ class TrafficLightDetector:
         roi_hsv = region_of_interest(hsv, self.roi_vertices)
 
         # Define two HSV ranges for red detection.
-        lower_red1 = np.array([0, 70, 50])
-        upper_red1 = np.array([10, 255, 255])
-        lower_red2 = np.array([160, 70, 50])
-        upper_red2 = np.array([180, 255, 255])
+        lower_red1 = np.array([0, 50, 50])
+        upper_red1 = np.array([10, 150, 255])
+        lower_red2 = np.array([140, 50, 50])
+        upper_red2 = np.array([180, 150, 255])
 
         mask_red1 = cv2.inRange(roi_hsv, lower_red1, upper_red1)
         mask_red2 = cv2.inRange(roi_hsv, lower_red2, upper_red2)
