@@ -90,8 +90,8 @@ class TrafficLightDetector:
         mask_red = cv2.bitwise_or(mask_red1, mask_red2)
 
         # Define HSV range for green detection.
-        lower_green = np.array([40, 40, 40])
-        upper_green = np.array([70, 255, 255])
+        lower_green = np.array([30, 50, 50])
+        upper_green = np.array([60, 150, 255])
         mask_green = cv2.inRange(roi_hsv, lower_green, upper_green)
 
         # Dilate the masks to fill gaps.
