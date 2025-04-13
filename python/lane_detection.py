@@ -165,7 +165,10 @@ class LaneDetector:
             steering_command = ANGLE_CENTER
 
         # Set speed based on steering command
-        speed = MODE.default.turn if "sharp" in steering_command else MODE.default.forward
+        if steering_command in [ANGLE_SHARP_LEFT, ANGLE_SHARP_RIGHT, ANGLE_VERY_SHARP_LEFT, ANGLE_VERY_SHARP_RIGHT]:
+            speed = MODE.default.turn
+        else:
+            speed = MODE.default.forward
         
 
         # Build full command string and send it via serial
