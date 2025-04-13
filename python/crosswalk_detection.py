@@ -7,9 +7,10 @@ class CrosswalkDetector:
     def __init__(
         self,
         no_detection_threshold=1,
-        history_length=5,
-        min_history_detections=3,
+        history_length=15,
+        min_history_detections=7,
         debug=False,
+        ser=None,
     ):
         self.crosswalk_sent = False
         self.no_detection_count = 0
@@ -19,6 +20,7 @@ class CrosswalkDetector:
         self.detection_history = deque(maxlen=history_length)
         self.debug = debug  # If True, draw lines, text, etc.
         self.time_ = None
+        self.ser = ser
     def preprocess_frame(self, frame, roi):
         x, y, w, h = roi
         cropped = frame[y : y + h, x : x + w]
@@ -31,7 +33,7 @@ class CrosswalkDetector:
         
     def detect_lines(self, edges):
         return cv2.HoughLinesP(
-            edges, 1, np.pi / 180, 30, minLineLength=10, maxLineGap=100
+            edges, 1, np.pi / 180, 50, minLineLength=15, maxLineGap=100
         )
 
     def filter_lines_by_angle(self, lines):
@@ -40,16 +42,16 @@ class CrosswalkDetector:
             for line in lines:
                 x1, y1, x2, y2 = line[0]
                 angle = np.degrees(np.arctan2(y2 - y1, x2 - x1))
-                if abs(angle) < 30:
+                if abs(angle) < 20:
                     horizontal_lines.append((x1, y1, x2, y2))
-                elif abs(abs(angle) - 90) < 30:
+                elif abs(abs(angle) - 90) < 15:
                     vertical_lines.append((x1, y1, x2, y2))
         return horizontal_lines, vertical_lines
 
-    def is_crosswalk(self, horizontal_lines, vertical_lines, min_horiz=3, min_vert=2):
+    def is_crosswalk(self, horizontal_lines, vertical_lines, min_horiz=3, min_vert=3):
         return (len(horizontal_lines) >= min_horiz) or (len(vertical_lines) >= min_vert)
 
-    def detect(self, frame, roi, ser):
+    def detect(self, frame, roi):
         x, y, w, h = roi
         cropped, mask = self.preprocess_frame(frame, roi)
         edges = self.detect_edges(mask)
@@ -65,7 +67,7 @@ class CrosswalkDetector:
         if confirmed_detection:
             if not self.crosswalk_sent:
                 self.time_ = time.time()
-                ser.send("crosswalk")
+                # ser.send("crosswalk")
                 print("crosswalk")
                 self.crosswalk_sent = True
             self.no_detection_count = 0
