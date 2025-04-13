@@ -52,7 +52,6 @@ class Robot:
         # try:
             while True:
                 ret, usb_camera_frame = self.usb_camera.cap.read()
-                
                 if self.running:
                     label = self.apriltag_detector.detect(usb_camera_frame)
                     if label == "stop":
@@ -62,15 +61,14 @@ class Robot:
 
                     self.ser.send("center 0")
                     continue
-                
+
                 
                 usb_camera_frame, detected_crosswalk, time_ = (
                     self.crosswalk_detector.detect(
                         usb_camera_frame, self.usb_camera.crosswalk_roi, self.ser
                     )
                 )
-                
-            
+
                 if detected_crosswalk:
                     ret, pi_camera_frame = self.pi_camera.cap.read()
                     # trafficlight
