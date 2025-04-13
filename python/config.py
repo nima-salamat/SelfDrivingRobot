@@ -27,7 +27,19 @@ BLUR_KERNEL = 5
 # Steering thresholds (in pixels)
 THRESHOLD_SLOW = 20  # Slight deviation
 THRESHOLD_MID = 45  # Moderate deviation
-THRESHOLD_SHARP = 110  # Sharp turn threshold
+THRESHOLD_SHARP = 70  # Sharp turn threshold
+THRESHOLD_VERY_SHARP = 110  # Sharp turn threshold
+
+ANGLE_SHARP_LEFT = 20
+ANGLE_MID_LEFT = 40
+ANGLE_SLOW_LEFT = 55
+ANGLE_CENTER = 70
+ANGLE_SLOW_RIGHT = 85
+ANGLE_MID_RIGHT = 100
+ANGLE_SHARP_RIGHT = 120
+ANGLE_VERY_SHARP_RIGHT = 0
+ANGLE_VERY_SHARP_LEFT = 140
+
 
 # Moving average history length for smoothing
 HISTORY_LEN = 3
@@ -85,7 +97,7 @@ class MODE:
         """Slow"""
 
         forward = 120
-        turn = 100
+        turn = 120
 
     class Snail:
         """Very Slow"""
@@ -93,7 +105,7 @@ class MODE:
         forward = 110
         turn = 100
 
-    default = Snail
+    default = Walk
 
     @classmethod
     def set(cls, class_):

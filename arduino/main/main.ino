@@ -156,48 +156,75 @@ void loop()
             Serial.println("Motors stopped.");
             return; // Skip the rest of the loop iteration
           }
+         if (receivedCommand.startsWith("command"))
+            {
+              int firstSpace = receivedCommand.indexOf(' ');
+              int secondSpace = receivedCommand.indexOf(' ', firstSpace + 1);
 
-          if (steeringCommand.equalsIgnoreCase("sharp left"))
-          {
-            servoAngle = ANGLE_SHARP_LEFT;
-          }
-          else if (steeringCommand.equalsIgnoreCase("mid left"))
-          {
-            servoAngle = ANGLE_MID_LEFT;
-          }
-          else if (steeringCommand.equalsIgnoreCase("slow left"))
-          {
-            servoAngle = ANGLE_SLOW_LEFT;
-          }
-          else if (steeringCommand.equalsIgnoreCase("sharp right"))
-          {
-            servoAngle = ANGLE_SHARP_RIGHT;
-          }
-          else if (steeringCommand.equalsIgnoreCase("mid right"))
-          {
-            servoAngle = ANGLE_MID_RIGHT;
-          }
-          else if (steeringCommand.equalsIgnoreCase("slow right"))
-          {
-            servoAngle = ANGLE_SLOW_RIGHT;
-          }
-          else if (steeringCommand.equalsIgnoreCase("center"))
-          {
-            // Adjust center based on the last servo position
-            if (lastServoAngle == ANGLE_SHARP_RIGHT)
-            {
-              servoAngle = ANGLE_CENTER - 10; // Move 10° to the right
-            }
-            else if (lastServoAngle == ANGLE_SHARP_LEFT)
-            {
-              servoAngle = ANGLE_CENTER + 10; // Move 10° to the left
-            }
-            else
-            {
-              servoAngle = ANGLE_CENTER;
-            }
-          }
+              if (firstSpace != -1 && secondSpace != -1)
+              {
+                String angleStr = receivedCommand.substring(firstSpace + 1, secondSpace);
+                String speedStr = receivedCommand.substring(secondSpace + 1);
 
+                int angle = angleStr.toInt();
+                int speed = speedStr.toInt();
+
+                if (angle >= 0 && angle <= 180 && speed >= 0 && speed <= 255)
+                {
+                  lastServoAngle = angle;
+                  normalSpeed = speed;
+
+                  servoAngle = angle;
+   
+                }
+                else
+                {
+                  Serial.println("Invalid angle or speed value.");
+                }
+             
+            }
+          } else {
+            if (steeringCommand.equalsIgnoreCase("sharp left"))
+            {
+              servoAngle = ANGLE_SHARP_LEFT;
+            }
+            else if (steeringCommand.equalsIgnoreCase("mid left"))
+            {
+              servoAngle = ANGLE_MID_LEFT;
+            }
+            else if (steeringCommand.equalsIgnoreCase("slow left"))
+            {
+              servoAngle = ANGLE_SLOW_LEFT;
+            }
+            else if (steeringCommand.equalsIgnoreCase("sharp right"))
+            {
+              servoAngle = ANGLE_SHARP_RIGHT;
+            }
+            else if (steeringCommand.equalsIgnoreCase("mid right"))
+            {
+              servoAngle = ANGLE_MID_RIGHT;
+            }
+            else if (steeringCommand.equalsIgnoreCase("slow right"))
+            {
+              servoAngle = ANGLE_SLOW_RIGHT;
+            }
+            else if (steeringCommand.equalsIgnoreCase("center"))
+            {
+              // Adjust center based on the last servo position
+              if (lastServoAngle == ANGLE_SHARP_RIGHT)
+              {
+                servoAngle = ANGLE_CENTER - 10; // Move 10° to the right
+              }
+              else if (lastServoAngle == ANGLE_SHARP_LEFT)
+              {
+                servoAngle = ANGLE_CENTER + 10; // Move 10° to the left
+              }
+              else
+              {
+                servoAngle = ANGLE_CENTER;
+              }
+            }
+          }
           // Write the new servo angle and update the last known angle
           myServo.write(servoAngle);
           lastServoAngle = servoAngle;

@@ -15,7 +15,17 @@ from config import (
     THRESHOLD_SHARP,
     THRESHOLD_SLOW,
     FIXED_CENTER,
-    MODE
+    MODE,
+    ANGLE_SHARP_LEFT,
+    ANGLE_MID_LEFT,
+    ANGLE_SLOW_LEFT,
+    ANGLE_CENTER,
+    ANGLE_SLOW_RIGHT,
+    ANGLE_MID_RIGHT,
+    ANGLE_SHARP_RIGHT,
+    ANGLE_VERY_SHARP_RIGHT,
+    ANGLE_VERY_SHARP_LEFT,
+    THRESHOLD_VERY_SHARP,
 )
 
 
@@ -134,28 +144,32 @@ class LaneDetector:
 
         # Determine steering command based on error thresholds
         if abs(error) < THRESHOLD_SLOW:
-            steering_command = "center"
+            steering_command = ANGLE_CENTER
+        elif error > THRESHOLD_VERY_SHARP:
+            steering_command = ANGLE_VERY_SHARP_RIGHT
         elif error > THRESHOLD_SHARP:
-            steering_command = "sharp right"
+            steering_command = ANGLE_SHARP_RIGHT
         elif error > THRESHOLD_MID:
-            steering_command = "mid right"
+            steering_command = ANGLE_MID_RIGHT
         elif error > THRESHOLD_SLOW:
-            steering_command = "slow right"
+            steering_command = ANGLE_SLOW_RIGHT
         elif error < -THRESHOLD_SHARP:
-            steering_command = "sharp left"
+            steering_command = ANGLE_SHARP_LEFT
         elif error < -THRESHOLD_MID:
-            steering_command = "mid left"
+            steering_command = ANGLE_MID_LEFT
         elif error < -THRESHOLD_SLOW:
-            steering_command = "slow left"
+            steering_command = ANGLE_SLOW_LEFT
+        elif error < -THRESHOLD_VERY_SHARP:
+            steering_command = ANGLE_VERY_SHARP_LEFT
         else:
-            steering_command = "center"
+            steering_command = ANGLE_CENTER
 
         # Set speed based on steering command
         speed = MODE.default.turn if "sharp" in steering_command else MODE.default.forward
         
 
         # Build full command string and send it via serial
-        full_command = f"{steering_command} {speed}"
+        full_command = f"command {steering_command} {speed}"
         self.ser.send(full_command)
         self.previous_lane_center = lane_center_avg
 
