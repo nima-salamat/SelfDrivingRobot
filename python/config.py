@@ -151,4 +151,6 @@ TAG_LABLES = {
 # main file variables
 DEBUG = False
 TRY_EXCEPT = False
+# arduino parameter 
+ULTERASONIC_ENABLED = False 
 # -------------------------------------------------------

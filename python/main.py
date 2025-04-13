@@ -1,8 +1,8 @@
 import cv2
 import time
 from camera import UsbCamera, PiCamera, CameraDevices
-from config import FRAME_DELAY
-from lane_detection import LaneDetector, DEBUG, TRY_EXCEPT
+from config import FRAME_DELAY, DEBUG, TRY_EXCEPT, ULTERASONIC_ENABLED
+from lane_detection import LaneDetector
 from crosswalk_detection import CrosswalkDetector
 from trafficlight_detection import TrafficLightDetector
 from apriltag_detection import ApriltagDetector
@@ -28,7 +28,10 @@ class Robot:
         
         # Serial
         self.ser = serial_connector.connect()
-
+        
+        # enable or disable ultersonic
+        self.ser.send("ultrasonic on" if ULTERASONIC_ENABLED else "ultrasonic off")
+        
         # Cameras
         # try:
         #     self.usb_camera = UsbCamera(CameraDevices.get_address(0))
