@@ -157,4 +157,13 @@ ULTERASONIC_ENABLED = False
 # apriltag config
 THRESHOLD_VALUE = 100 
 USE_ADAPTIVE_THRESHOLD = True 
+
+# ROI_ORDER: "before" to crop the ROI before preprocessing,
+#            "after" to crop after preprocessing.
+ROI_ORDER = "after"  # or "before"
+
+# DETECTOR_TYPE: "LSD" to use OpenCV's Line Segment Detector,
+#                "HOUGH" to use HoughLinesP.
+DETECTOR_TYPE = "HOUGH"  # or "LSD"
+
 # -------------------------------------------------------
