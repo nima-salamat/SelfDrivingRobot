@@ -45,18 +45,32 @@ class Robot:
         self.crosswalk_detector = CrosswalkDetector(debug=self.debug)
         self.lane_detector = LaneDetector(self.usb_camera, self.ser, debug=self.debug)
         self.apriltag_detector = ApriltagDetector()
+        self.running = True
+        self.stop_seen = False
 
     def autorun(self):
         try:
             while True:
                 ret, usb_camera_frame = self.usb_camera.cap.read()
                 
+                if self.running:
+                    label = self.apriltag_detector.detect(usb_camera_frame)
+                    if label == "stop":
+                        self.stop_seen = True
+                    elif label == "no sign" and self.stop_seen:
+                        self.running = False
+
+                    self.ser.send("center 0")
+                    continue
+                
+                
                 usb_camera_frame, detected_crosswalk, time_ = (
                     self.crosswalk_detector.detect(
                         usb_camera_frame, self.usb_camera.crosswalk_roi, self.ser
                     )
                 )
-
+                
+            
                 if detected_crosswalk:
                     ret, pi_camera_frame = self.pi_camera.cap.read()
                     # trafficlight
