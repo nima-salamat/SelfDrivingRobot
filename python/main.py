@@ -50,7 +50,7 @@ class Robot:
         try:
             while True:
                 ret, usb_camera_frame = self.usb_camera.cap.read()
-
+                
                 usb_camera_frame, detected_crosswalk, time_ = (
                     self.crosswalk_detector.detect(
                         usb_camera_frame, self.usb_camera.crosswalk_roi, self.ser

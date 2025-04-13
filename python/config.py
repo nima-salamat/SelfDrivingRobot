@@ -1,4 +1,5 @@
 import numpy as np
+
 # ---------------- Adjustable Parameters ----------------
 # ROI parameters (fractions of frame size)
 ROI_Y_START_FRAC = 0.65  # Top of ROI (bottom 35% of frame)
@@ -26,7 +27,7 @@ BLUR_KERNEL = 5
 # Steering thresholds (in pixels)
 THRESHOLD_SLOW = 20  # Slight deviation
 THRESHOLD_MID = 45  # Moderate deviation
-THRESHOLD_SHARP = 90  # Sharp turn threshold
+THRESHOLD_SHARP = 110  # Sharp turn threshold
 
 # Moving average history length for smoothing
 HISTORY_LEN = 3
@@ -55,42 +56,53 @@ CAMERA_HEIGHT = 240
 
 class MODE:
     """Speed Modes"""
-    class Turbo: 
+
+    class Turbo:
         """Fast"""
+
         forward = 180
         turn = 140
+
     class Economy:
         """Medium Fast"""
+
         forward = 160
         turn = 130
+
     class Center:
         """Medium"""
+
         forward = 150
         turn = 130
-    class Trot: 
+
+    class Trot:
         """Medium Slow"""
+
         forward = 140
         turn = 120
-    
-    class Walk: 
+
+    class Walk:
         """Slow"""
+
         forward = 120
         turn = 100
-    
+
     class Snail:
         """Very Slow"""
+
         forward = 110
-        turn = 90
-    
+        turn = 100
+
     default = Snail
+
     @classmethod
     def set(cls, class_):
         cls.default = class_
-        
-    @classmethod  
+
+    @classmethod
     def get(cls):
         return cls.default
-    
+
     @classmethod
     def custom_mode(cls, forward, turn, set=True):
         if type(forward) is type(turn) is int:
@@ -98,10 +110,10 @@ class MODE:
             if set:
                 cls.default = custom_speed
             return cls.default
-    
+
         else:
             raise ValueError("forward and turn must be <class:int>")
-    
+
 
 # -------------------------------------------------------
 
