@@ -78,6 +78,7 @@ class Robot:
                     usb_camera_frame = self.lane_detector.detect(usb_camera_frame)
 
                 else:
+                    
                     if time_ + 4 < time.time():
                         self.ser.send("center 100")
                     else:

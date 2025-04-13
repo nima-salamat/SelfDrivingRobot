@@ -82,7 +82,7 @@ class MODE:
         forward = 110
         turn = 90
     
-    default = Trot
+    default = Snail
     @classmethod
     def set(cls, class_):
         cls.default = class_

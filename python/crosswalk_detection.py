@@ -18,7 +18,7 @@ class CrosswalkDetector:
         self.min_history_detections = min_history_detections
         self.detection_history = deque(maxlen=history_length)
         self.debug = debug  # If True, draw lines, text, etc.
-
+        self.time_ = None
     def preprocess_frame(self, frame, roi):
         x, y, w, h = roi
         cropped = frame[y : y + h, x : x + w]
@@ -50,7 +50,6 @@ class CrosswalkDetector:
         return (len(horizontal_lines) >= min_horiz) or (len(vertical_lines) >= min_vert)
 
     def detect(self, frame, roi, ser):
-        time_ = None
         x, y, w, h = roi
         cropped, mask = self.preprocess_frame(frame, roi)
         edges = self.detect_edges(mask)
@@ -65,7 +64,7 @@ class CrosswalkDetector:
         # Message handling
         if confirmed_detection:
             if not self.crosswalk_sent:
-                time_ = time.time()
+                self.time_ = time.time()
                 ser.send("crosswalk")
                 print("crosswalk")
                 self.crosswalk_sent = True
@@ -102,4 +101,4 @@ class CrosswalkDetector:
                 2,
             )
 
-        return frame, confirmed_detection, time_
+        return frame, confirmed_detection, self.time_
