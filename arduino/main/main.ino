@@ -20,13 +20,13 @@ int normalSpeed = 130; // Default speed
 const int OBSTACLE_THRESHOLD = 15;
 
 // Servo angle mapping
-const int ANGLE_SHARP_LEFT = 40;
-const int ANGLE_MID_LEFT = 65;
-const int ANGLE_SLOW_LEFT = 85;
-const int ANGLE_CENTER = 97;
-const int ANGLE_SLOW_RIGHT = 115;
-const int ANGLE_MID_RIGHT = 135;
-const int ANGLE_SHARP_RIGHT = 160;
+const int ANGLE_SHARP_LEFT = 0;
+const int ANGLE_MID_LEFT = 40;
+const int ANGLE_SLOW_LEFT = 55;
+const int ANGLE_CENTER = 70;
+const int ANGLE_SLOW_RIGHT = 85;
+const int ANGLE_MID_RIGHT = 100;
+const int ANGLE_SHARP_RIGHT = 140;
 
 // Global Variables
 bool ultrasonicEnabled = false;
@@ -87,8 +87,8 @@ void setMotorSpeed(int leftSpeed, int rightSpeed)
   }
   else
   {
-    digitalWrite(MotorA1, LOW);
-    digitalWrite(MotorA2, LOW);
+    digitalWrite(MotorA1, 0);
+    digitalWrite(MotorA2, 0);
   }
 
   if (rightSpeed > 0)
@@ -103,8 +103,8 @@ void setMotorSpeed(int leftSpeed, int rightSpeed)
   }
   else
   {
-    digitalWrite(MotorB1, LOW);
-    digitalWrite(MotorB2, LOW);
+    digitalWrite(MotorB1, 0);
+    digitalWrite(MotorB2, 0);
   }
 
   analogWrite(APWM, abs(leftSpeed));
@@ -150,12 +150,13 @@ void loop()
 
           // Determine Servo Angle based on steering command
           int servoAngle = lastServoAngle; // Start from the last known angle
-          if (steeringCommand.equalsIgnoreCase("crosswalk"))
-          {  
+          if (receivedCommand.equalsIgnoreCase("stop")) {
+            // Stop the motors immediately and optionally update the servo.
             setMotorSpeed(0, 0);
-            delay(4000);
-
+            Serial.println("Motors stopped.");
+            return; // Skip the rest of the loop iteration
           }
+
           if (steeringCommand.equalsIgnoreCase("sharp left"))
           {
             servoAngle = ANGLE_SHARP_LEFT;

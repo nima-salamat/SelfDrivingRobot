@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from collections import deque
 from config import BLUR_KERNEL
-
+import time
 class CrosswalkDetector:
     def __init__(
         self,
@@ -50,6 +50,7 @@ class CrosswalkDetector:
         return (len(horizontal_lines) >= min_horiz) or (len(vertical_lines) >= min_vert)
 
     def detect(self, frame, roi, ser):
+        time_ = None
         x, y, w, h = roi
         cropped, mask = self.preprocess_frame(frame, roi)
         edges = self.detect_edges(mask)
@@ -64,6 +65,7 @@ class CrosswalkDetector:
         # Message handling
         if confirmed_detection:
             if not self.crosswalk_sent:
+                time_ = time.time()
                 ser.send("crosswalk")
                 print("crosswalk")
                 self.crosswalk_sent = True
@@ -100,4 +102,4 @@ class CrosswalkDetector:
                 2,
             )
 
-        return frame, confirmed_detection
+        return frame, confirmed_detection, time_

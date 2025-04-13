@@ -35,7 +35,7 @@ HISTORY_LEN = 3
 LANE_WIDTH_FRAC = 0.3
 
 # Fixed center x-position for error calculation
-FIXED_CENTER = 315
+FIXED_CENTER = 295
 
 # Camera and production settings
 CAMERA_INDEX = 0
