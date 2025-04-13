@@ -1,7 +1,12 @@
 import cv2
 import math
 from dt_apriltags import Detector
-from config import TAG_LABLES, MIN_SIZE_APRILTAG  # Your custom config
+from config import (
+    TAG_LABLES,
+    MIN_SIZE_APRILTAG,
+    THRESHOLD_VALUE,
+    USE_ADAPTIVE_THRESHOLD,
+)  
 
 
 class ApriltagDetector:
@@ -19,7 +24,17 @@ class ApriltagDetector:
 
     def detect(self, frame):
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        detections = self.detector.detect(gray, estimate_tag_pose=False)
+
+        if USE_ADAPTIVE_THRESHOLD:
+            thresh = cv2.adaptiveThreshold(
+                gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
+            )
+        else:
+            _, thresh = cv2.threshold(gray, THRESHOLD_VALUE, 255, cv2.THRESH_BINARY)
+
+        detections = self.detector.detect(
+            thresh, estimate_tag_pose=False
+        )  
 
         main_size = 0
         nearest_apriltag = None
@@ -36,7 +51,6 @@ class ApriltagDetector:
 
         label = "no sign"
         if nearest_apriltag is not None:
-            # Draw tag box
             cv2.polylines(
                 frame,
                 [nearest_apriltag.corners.astype(int)],
@@ -44,8 +58,6 @@ class ApriltagDetector:
                 color=(0, 255, 0),
                 thickness=2,
             )
-
-            # Get label
             tag_id = nearest_apriltag.tag_id
             label = TAG_LABLES.get(tag_id, f"ID {tag_id}")
 

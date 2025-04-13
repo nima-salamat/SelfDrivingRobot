@@ -153,4 +153,8 @@ DEBUG = False
 TRY_EXCEPT = False
 # arduino parameter 
 ULTERASONIC_ENABLED = False 
+
+# apriltag config
+THRESHOLD_VALUE = 100 
+USE_ADAPTIVE_THRESHOLD = True 
 # -------------------------------------------------------
