@@ -49,7 +49,7 @@ class Robot:
         self.stop_seen = False
 
     def autorun(self):
-        try:
+        # try:
             while True:
                 ret, usb_camera_frame = self.usb_camera.cap.read()
                 
@@ -105,9 +105,9 @@ class Robot:
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
                 time.sleep(FRAME_DELAY)
-        except Exception as e:
-            print(e)
-        finally:
+        # except Exception as e:
+        #     print(e)
+        # finally:
             self.exit()
 
     def exit(self):
