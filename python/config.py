@@ -37,8 +37,8 @@ ANGLE_CENTER = 70
 ANGLE_SLOW_RIGHT = 85
 ANGLE_MID_RIGHT = 100
 ANGLE_SHARP_RIGHT = 120
-ANGLE_VERY_SHARP_RIGHT = 0
-ANGLE_VERY_SHARP_LEFT = 140
+ANGLE_VERY_SHARP_RIGHT = 140
+ANGLE_VERY_SHARP_LEFT = 0
 
 
 # Moving average history length for smoothing
@@ -96,8 +96,8 @@ class MODE:
     class Walk:
         """Slow"""
 
-        forward = 120
-        turn = 120
+        forward = 130
+        turn = 130
 
     class Snail:
         """Very Slow"""
