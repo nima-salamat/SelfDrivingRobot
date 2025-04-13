@@ -23,7 +23,7 @@ sudo apt install -y python3-pycamera2
 sudo raspi-config  # Enable Camera: Interface Options > Camera > Enable
 
 # For AprilTags detection:
-pip3 install apriltag numpy
+pip3 install dt-apriltags numpy
 ```
 ---
 

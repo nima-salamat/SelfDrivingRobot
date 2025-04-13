@@ -1,55 +1,52 @@
-import math
-try:
-    from apriltag import Detector
-except Exception:
-    print("we can import apriltag in windows :D")
 import cv2
-from config import TAG_LABLES, MIN_SIZE_APRILTAG
+import math
+from dt_apriltags import Detector
+from config import TAG_LABLES, MIN_SIZE_APRILTAG  # Your custom config
 
 
 class ApriltagDetector:
     def __init__(self):
-        try:
-            
-            self.detector = Detector()
-        except Exception:
-            print("we cant use apriltag.Decector :D")
+        self.detector = Detector(
+            searchpath=["apriltags"],
+            families="tag36h11",
+            nthreads=1,
+            quad_decimate=1.0,
+            quad_sigma=0.0,
+            refine_edges=1,
+            decode_sharpening=0.25,
+            debug=0,
+        )
+
     def detect(self, frame):
-        try:
-            # Convert the frame to grayscale
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        detections = self.detector.detect(gray, estimate_tag_pose=False)
 
-            # Detect AprilTags in the frame
-            detections = self.detector.detect(gray)
+        main_size = 0
+        nearest_apriltag = None
+        for detection in detections:
+            corners = detection.corners
+            dot1 = corners[0]
+            dot2 = corners[2]
+            size = int(math.dist(dot1, dot2))
 
-            # Find the nearest apriltag
-            main_size = 0
-            nearest_apriltag = None
-            for detection in detections:
-                # Calculate the size of the detected tag (distance between two corners)
-                dot1 = detection.corners[0]
-                dot2 = detection.corners[2]
-                size = int(math.dist(dot1, dot2))
+            if size >= MIN_SIZE_APRILTAG:
+                if size > main_size:
+                    nearest_apriltag = detection
+                    main_size = size
 
-                if size >= MIN_SIZE_APRILTAG:
-                    if size > main_size:
-                        nearest_apriltag = detection
-                        main_size = size
+        label = "no sign"
+        if nearest_apriltag is not None:
+            # Draw tag box
+            cv2.polylines(
+                frame,
+                [nearest_apriltag.corners.astype(int)],
+                isClosed=True,
+                color=(0, 255, 0),
+                thickness=2,
+            )
 
-            # Show nearest apriltag
-            label = "no sign"
-            if nearest_apriltag is not None:
-                # Draw the bounding box of the tag
-                cv2.polylines(
-                    frame, [nearest_apriltag.corners.astype(int)], True, (240, 130, 50), 2
-                )
+            # Get label
+            tag_id = nearest_apriltag.tag_id
+            label = TAG_LABLES.get(tag_id, f"ID {tag_id}")
 
-                # Find label and get order
-                try:
-                    label = TAG_LABLES[nearest_apriltag.tag_id]
-                except Exception:
-                    pass
-
-            return label
-        except Exception:
-            return "no sign"
+        return label
