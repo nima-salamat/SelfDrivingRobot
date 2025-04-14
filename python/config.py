@@ -151,12 +151,12 @@ TAG_LABLES = {
 # main file variables
 DEBUG = False
 TRY_EXCEPT = False
-# arduino parameter 
-ULTERASONIC_ENABLED = False 
+# arduino parameter
+ULTERASONIC_ENABLED = False
 
 # apriltag config
-THRESHOLD_VALUE = 100 
-USE_ADAPTIVE_THRESHOLD = True 
+THRESHOLD_VALUE = 100
+USE_ADAPTIVE_THRESHOLD = True
 
 # ROI_ORDER: "before" to crop the ROI before preprocessing,
 #            "after" to crop after preprocessing.
