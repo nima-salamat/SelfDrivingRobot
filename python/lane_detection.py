@@ -471,7 +471,7 @@ class LaneDetector:
         if abs(error) < THRESHOLD_SLOW:
             steering_command = ANGLE_CENTER
         elif error > THRESHOLD_VERY_SHARP:
-            steering_command = ANGLE_VERY_SHARP_RIGHT
+            steering_command = ANGLE_MID_RIGHT
         elif error > THRESHOLD_SHARP:
             steering_command = ANGLE_SHARP_RIGHT
         elif error > THRESHOLD_MID:
