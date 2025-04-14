@@ -72,7 +72,8 @@ class Robot:
                 label = self.apriltag_detector.detect(pi_camera_frame)
                 if label == "stop":
                     self.stop_seen = True
-                elif label == "no sign" and self.stop_seen:
+                    self.last_time_seen = time.time()
+                elif label == "no sign" and self.stop_seen and time.time() - self.last_time_seen > 1:
                     self.running = False
 
                 self.ser.send("center 0")
