@@ -54,7 +54,10 @@ class Robot:
         self.running = True
         self.stop_seen = False
         self.intersection_navigator = IntersectionNavigator(self.ser)
-
+        self.last_traffic_light = (None, None) # ("no light", time)
+        self.last_apriltag = (None, None)
+        self.tolerance = 2
+        
     def loop(self):
         while True:
             if self.running:
@@ -89,12 +92,26 @@ class Robot:
                 label = self.apriltag_detector.detect(pi_camera_frame)
                 print(label) if label != "no sign" else None
 
+                if label != "no sign" and color != "no light":
+                    self.last_apriltag = (label ,time.time())
+                    self.last_traffic_light = (color, time.time())
+                while color == "red light":
+                    ret, pi_camera_frame = self.pi_camera.cap.read()
+                    # trafficlight
+                    pi_camera_frame, color = self.trafficlight_detector.detect(
+                        pi_camera_frame
+                    )
+                    self.ser.send("center 0")
+                    
+                
+                    
                 # if label != "no sign":
                 #     self.ser.send(
                 #         "intersection" + " " + label + " " + color
                 #     )  # --- attention!! not implemented yet. . .
-                if color in ["no light", "green light"] and label != "no sign":
-                    self.intersection_navigator.navigate_by_tag(label)
+            
+                # if color in ["no light", "green light"] and label != "no sign":
+                #     self.intersection_navigator.navigate_by_tag(label)
                 if self.debug:
                     cv2.imshow("pi",pi_camera_frame)
 
@@ -107,6 +124,29 @@ class Robot:
                     self.ser.send("center 100")
                 else:
                     self.ser.send("center 0")
+                
+                
+                
+                if (self.last_apriltag[0] is not None and self.last_traffic_light[0] is not None and 
+                (time.time() - self.last_apriltag[1]) < self.tolerance and 
+                (time.time() - self.last_traffic_light[1]) < self.tolerance):
+                    # Navigate
+                    self.intersection_navigator.navigate_by_tag(label)
+                    self.last_apriltag = (None, None) 
+                    self.last_traffic_light = (None, None)
+
+                # if time.time() - self.last_apriltag[1] < self.tolerance \
+                #     and time.time() - self.last_traffic_light[1] < self.tolerance:
+                #     if color in ["no light", "green light"] and label != "no sign":
+                #         if self.last_apriltag != (
+                #             None,
+                #             None,
+                #         ) and self.last_traffic_light != (None, None):
+                #             self.intersection_navigator.navigate_by_tag(label)
+                #         else:
+                #             self.last_apriltag = (None, None)
+                #             self.last_traffic_light = (None, None)
+
 
             if self.debug:
                 cv2.imshow("usb", usb_camera_frame)
