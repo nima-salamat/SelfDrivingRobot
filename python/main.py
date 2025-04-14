@@ -111,7 +111,7 @@ class Robot:
                 # if color in ["no light", "green light"] and label != "no sign":
                 #     self.intersection_navigator.navigate_by_tag(label)
                 if self.debug:
-                    cv2.imshow("pi", usb_camera_frame)
+                    cv2.imshow("pi", pi_camera_frame)
 
             # lane
             if not detected_crosswalk:
