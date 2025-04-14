@@ -60,6 +60,8 @@ class Robot:
         self.last_traffic_light = (None, None)  # ("no light", time)
         self.last_apriltag = (None, None)
         self.tolerance = 2
+        if "no-stop" in args:
+            self.running = False
 
     def loop(self):
         while True:
