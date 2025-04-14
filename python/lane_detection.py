@@ -367,8 +367,9 @@ class LaneDetector:
         # Preprocess image
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         blur = cv2.GaussianBlur(gray, (BLUR_KERNEL, BLUR_KERNEL), 0)
-        edges = cv2.Canny(blur, CANNY_LOW, CANNY_HIGH)
-
+        _, white_lines = cv2.threshold(blur, 200, 255, cv2.THRESH_BINARY)
+        edges = cv2.Canny(white_lines, CANNY_LOW, CANNY_HIGH)
+        
         # Apply ROI extraction to edges
         roi = edges[
             self.camera.ROI_Y_START : self.camera.ROI_Y_END,

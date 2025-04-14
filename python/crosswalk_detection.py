@@ -10,7 +10,7 @@ class CrosswalkDetector:
         self,
         no_detection_threshold=1,
         history_length=15,
-        min_history_detections=7,
+        min_history_detections=5,
         debug=False,
         ser=None,
     ):
@@ -45,7 +45,7 @@ class CrosswalkDetector:
             for line in lines:
                 x1, y1, x2, y2 = line[0]
                 angle = np.degrees(np.arctan2(y2 - y1, x2 - x1))
-                if abs(angle) < 20:
+                if abs(angle) < 25:
                     horizontal_lines.append((x1, y1, x2, y2))
                 elif abs(abs(angle) - 90) < 15:
                     vertical_lines.append((x1, y1, x2, y2))

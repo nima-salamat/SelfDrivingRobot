@@ -270,5 +270,5 @@ void loop()
 
   delay(50);
   setMotorSpeed(1, 1);
-  delay(0.1);
+  delay(10);
 }
