@@ -487,7 +487,7 @@ class LaneDetector:
         elif error < -THRESHOLD_VERY_SHARP:
             steering_command = ANGLE_VERY_SHARP_LEFT
         else:
-            steering_command = ANGLE_CENTER
+            steering_command = ANGLE_MID_RIGHT
 
         # Set speed based on steering command
         if steering_command in [
