@@ -3,10 +3,12 @@ import numpy as np
 from collections import deque
 from config import BLUR_KERNEL
 import time
+
+
 class CrosswalkDetector:
     def __init__(
         self,
-        no_detection_threshold=2,
+        no_detection_threshold=1,
         history_length=15,
         min_history_detections=7,
         debug=False,
@@ -21,6 +23,7 @@ class CrosswalkDetector:
         self.debug = debug  # If True, draw lines, text, etc.
         self.time_ = None
         self.ser = ser
+
     def preprocess_frame(self, frame, roi):
         x, y, w, h = roi
         cropped = frame[y : y + h, x : x + w]
@@ -30,7 +33,7 @@ class CrosswalkDetector:
 
     def detect_edges(self, mask):
         return cv2.Canny(mask, 50, 255)
-        
+
     def detect_lines(self, edges):
         return cv2.HoughLinesP(
             edges, 1, np.pi / 180, 50, minLineLength=15, maxLineGap=100

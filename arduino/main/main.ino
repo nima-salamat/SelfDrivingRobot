@@ -88,7 +88,7 @@ void setMotorSpeed(int leftSpeed, int rightSpeed)
   else
   {
     digitalWrite(MotorA1, 0);
-    digitalWrite(MotorA2, 0;
+    digitalWrite(MotorA2, 0);
   }
 
   if (rightSpeed > 0)
