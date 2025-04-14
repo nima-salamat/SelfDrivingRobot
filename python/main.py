@@ -53,7 +53,9 @@ class Robot:
         self.apriltag_detector = ApriltagDetector()
         self.running = True
         self.stop_seen = False
+        self.last_time_seen = 0
         self.intersection_navigator = IntersectionNavigator(self.ser)
+        
         self.last_traffic_light = (None, None)  # ("no light", time)
         self.last_apriltag = (None, None)
         self.tolerance = 2
