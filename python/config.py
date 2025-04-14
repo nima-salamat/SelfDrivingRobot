@@ -57,7 +57,7 @@ FRAME_DELAY = 1 / TARGET_FPS
 
 # Serial port settings
 SERIAL_PORT = "/dev/ttyUSB0"  # Adjust as needed
-BAUD_RATE = 9600
+BAUD_RATE = 51600
 
 CAMERA_TOP_INDEX = 1  # ----------- attention!!
 CAMERA_BOTTOM_INDEX = 0  # ----------- attention!!

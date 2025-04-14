@@ -6,7 +6,7 @@ import time
 class CrosswalkDetector:
     def __init__(
         self,
-        no_detection_threshold=1,
+        no_detection_threshold=2,
         history_length=15,
         min_history_detections=7,
         debug=False,

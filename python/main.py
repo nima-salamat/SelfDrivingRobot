@@ -121,7 +121,8 @@ class Robot:
 
             else:
                 if time_ + 4 < time.time():
-                    self.ser.send("center 100")
+                    self.ser.send("center 120")
+                    self.crosswalk_detector.time_ = None
                 else:
                     self.ser.send("center 0")
 

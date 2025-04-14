@@ -37,7 +37,7 @@ int lastServoAngle = ANGLE_CENTER; // Keeps track of the last servo angle
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(51600);
   Serial.println("Arduino Lane Follower started with L298P Motor Shield.");
   Serial.println("Expected commands: 'steering speed' (e.g., 'sharp left 125'), 'ultrasonic on/off'");
 
@@ -88,7 +88,7 @@ void setMotorSpeed(int leftSpeed, int rightSpeed)
   else
   {
     digitalWrite(MotorA1, 0);
-    digitalWrite(MotorA2, 0);
+    digitalWrite(MotorA2, 0;
   }
 
   if (rightSpeed > 0)
@@ -150,40 +150,41 @@ void loop()
 
           // Determine Servo Angle based on steering command
           int servoAngle = lastServoAngle; // Start from the last known angle
-          if (receivedCommand.equalsIgnoreCase("stop")) {
+          if (receivedCommand.equalsIgnoreCase("stop"))
+          {
             // Stop the motors immediately and optionally update the servo.
             setMotorSpeed(0, 0);
             Serial.println("Motors stopped.");
             return; // Skip the rest of the loop iteration
           }
-         if (receivedCommand.startsWith("command"))
+          if (receivedCommand.startsWith("command"))
+          {
+            int firstSpace = receivedCommand.indexOf(' ');
+            int secondSpace = receivedCommand.indexOf(' ', firstSpace + 1);
+
+            if (firstSpace != -1 && secondSpace != -1)
             {
-              int firstSpace = receivedCommand.indexOf(' ');
-              int secondSpace = receivedCommand.indexOf(' ', firstSpace + 1);
+              String angleStr = receivedCommand.substring(firstSpace + 1, secondSpace);
+              String speedStr = receivedCommand.substring(secondSpace + 1);
 
-              if (firstSpace != -1 && secondSpace != -1)
+              int angle = angleStr.toInt();
+              int speed = speedStr.toInt();
+
+              if (angle >= 0 && angle <= 180 && speed >= 0 && speed <= 255)
               {
-                String angleStr = receivedCommand.substring(firstSpace + 1, secondSpace);
-                String speedStr = receivedCommand.substring(secondSpace + 1);
+                lastServoAngle = angle;
+                normalSpeed = speed;
 
-                int angle = angleStr.toInt();
-                int speed = speedStr.toInt();
-
-                if (angle >= 0 && angle <= 180 && speed >= 0 && speed <= 255)
-                {
-                  lastServoAngle = angle;
-                  normalSpeed = speed;
-
-                  servoAngle = angle;
-   
-                }
-                else
-                {
-                  Serial.println("Invalid angle or speed value.");
-                }
-             
+                servoAngle = angle;
+              }
+              else
+              {
+                Serial.println("Invalid angle or speed value.");
+              }
             }
-          } else {
+          }
+          else
+          {
             if (steeringCommand.equalsIgnoreCase("sharp left"))
             {
               servoAngle = ANGLE_SHARP_LEFT;
@@ -268,4 +269,6 @@ void loop()
   setMotorSpeed(motorSpeed, motorSpeed);
 
   delay(50);
+  setMotorSpeed(1, 1);
+  delay(0.1);
 }
