@@ -369,7 +369,7 @@ class LaneDetector:
         blur = cv2.GaussianBlur(gray, (BLUR_KERNEL, BLUR_KERNEL), 0)
         _, white_lines = cv2.threshold(blur, 200, 255, cv2.THRESH_BINARY)
         edges = cv2.Canny(white_lines, CANNY_LOW, CANNY_HIGH)
-        
+
         # Apply ROI extraction to edges
         roi = edges[
             self.camera.ROI_Y_START : self.camera.ROI_Y_END,
@@ -457,6 +457,9 @@ class LaneDetector:
             lane_center = np.mean(right_x_bottoms) - self.camera.LANE_WIDTH / 2
         else:
             lane_center = self.previous_lane_center
+            full_command = f"command {ANGLE_MID_RIGHT} 120"
+            self.ser.send(full_command)
+            return frame
 
         # Maintain a moving average for lane center
         self.LANE_CENTER_HISTORY.append(lane_center)
@@ -471,7 +474,7 @@ class LaneDetector:
         if abs(error) < THRESHOLD_SLOW:
             steering_command = ANGLE_CENTER
         elif error > THRESHOLD_VERY_SHARP:
-            steering_command = ANGLE_MID_RIGHT
+            steering_command = ANGLE_VERY_SHARP_RIGHT
         elif error > THRESHOLD_SHARP:
             steering_command = ANGLE_SHARP_RIGHT
         elif error > THRESHOLD_MID:

@@ -153,7 +153,7 @@ void loop()
           if (receivedCommand.equalsIgnoreCase("stop"))
           {
             // Stop the motors immediately and optionally update the servo.
-            setMotorSpeed(0, 0);
+            setMotorSpeed(1, 1);
             Serial.println("Motors stopped.");
             return; // Skip the rest of the loop iteration
           }
@@ -260,7 +260,7 @@ void loop()
 
     if (distance > 0 && distance < OBSTACLE_THRESHOLD)
     {
-      motorSpeed = 0;
+      motorSpeed = 1;
       Serial.println("Obstacle detected! Motor stopped.");
     }
   }

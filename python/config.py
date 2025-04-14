@@ -14,7 +14,7 @@ MIN_SLOPE = 0.7  # More lenient slope filter
 HOUGH_RHO = 1
 HOUGH_THETA = np.pi / 180
 HOUGH_THRESHOLD = 25
-HOUGH_MIN_LINE_LEN = 20
+HOUGH_MIN_LINE_LEN = 30
 HOUGH_MAX_LINE_GAP = 10
 
 # Canny edge detection thresholds
