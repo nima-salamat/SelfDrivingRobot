@@ -55,7 +55,7 @@ class UsbCamera(Camera):
         
     def initialize_fixed_roi(self):
         self.crosswalk_roi = (
-            self.width // 4,
+            0,
             (3 * self.height) // 5,
             self.width // 2,
             (2 * self.height) // 5,

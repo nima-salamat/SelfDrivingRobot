@@ -4,7 +4,7 @@ import numpy as np
 # ROI parameters (fractions of frame size)
 ROI_Y_START_FRAC = 0.65  # Top of ROI (bottom 35% of frame)
 ROI_X_START_FRAC = 0.4  # Left edge for lane detection
-ROI_X_END_FRAC = 1  # Right edge for lane detection
+ROI_X_END_FRAC = 0.8  # Right edge for lane detection
 ROI_WIDTH_FRAC = ROI_X_END_FRAC - ROI_X_START_FRAC
 
 # Slope thresholds for lane lines
@@ -48,7 +48,7 @@ HISTORY_LEN = 3
 LANE_WIDTH_FRAC = 0.3
 
 # Fixed center x-position for error calculation
-FIXED_CENTER = 250
+FIXED_CENTER = 240
 
 # Camera and production settings
 CAMERA_INDEX = 0
