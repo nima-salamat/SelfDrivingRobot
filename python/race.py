@@ -6,6 +6,7 @@ from lane_detection import LaneDetector
 import serial_connector
 import sys
 from gpiozero import DistanceSensor
+from gpiozero.pins.pigpio import PiGPIOFactory
 
 
 class Robot:
@@ -33,7 +34,9 @@ class Robot:
         # Detectors
         self.lane_detector = LaneDetector(self.usb_camera, self.ser, debug=False)
 
-        self.ultrasonic = DistanceSensor(echo=17, trigger=4)
+        factory = PiGPIOFactory()
+        self.ultrasonic = DistanceSensor(echo=17, trigger=4, pin_factory=factory)
+        self.min_dist = 0.3
 
     def handle_pass_block(self):
         self.ser.send("sharp left 160")
@@ -43,22 +46,22 @@ class Robot:
         time.sleep(1)
 
         self.ser.send("sharp right 160")
-        time.sleep(1)
+        time.sleep(0.8)
 
         self.ser.send("sharp left 160")
-        time.sleep(1)
+        time.sleep(0.8)
 
     def loop(self):
         while True:
             ret, usb_camera_frame = self.usb_camera.cap.read()
-            if 0.2 <= self.ultrasonic.distance <= 0.25:
+            if self.min_dist <= self.ultrasonic.distance <= self.min_dist+0.5:
                 self.ser.send("center 0")
-                time.sleep(1)
+                time.sleep(0.5)
                 self.handle_pass_block()
-            elif self.ultrasonic.distance < 0.2:
+            elif self.ultrasonic.distance < self.min_dist:
                 self.ser.send("center 0")
                 time.sleep(0.3)
-                while self.ultrasonic < 0.2:
+                while self.ultrasonic.distance <= self.min_dist+0.1:
                     self.ser.send("center -150")
 
             usb_camera_frame = self.lane_detector.detect(usb_camera_frame)
