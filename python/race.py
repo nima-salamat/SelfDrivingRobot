@@ -64,7 +64,6 @@ class Robot:
                 self.handle_pass_block()
 
             usb_camera_frame = self.lane_detector.detect(usb_camera_frame)
-            self.stop_block_seen(usb_camera_frame)
             if self.debug:
                 cv2.imshow("usb", usb_camera_frame)
             if cv2.waitKey(1) & 0xFF == ord("q"):
