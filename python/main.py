@@ -55,13 +55,14 @@ class Robot:
         self.stop_seen = False
         self.last_time_seen = 0
         self.intersection_navigator = IntersectionNavigator(self.ser)
-        
 
         self.last_traffic_light = (None, None)  # ("no light", time)
         self.last_apriltag = (None, None)
-        self.tolerance = 2
+        self.tolerance = 6
         if "no-stop" in args:
             self.running = False
+        
+        self.race = True
 
     def loop(self):
         while True:
@@ -73,19 +74,26 @@ class Robot:
                 if label == "stop":
                     self.stop_seen = True
                     self.last_time_seen = time.time()
-                elif label == "no sign" and self.stop_seen and time.time() - self.last_time_seen > 1:
+                elif (
+                    label == "no sign"
+                    and self.stop_seen
+                    and time.time() - self.last_time_seen > 1
+                ):
                     self.running = False
 
                 self.ser.send("center 0")
                 continue
             # camera read
             ret, usb_camera_frame = self.usb_camera.cap.read()
-            # crosswalk
-            usb_camera_frame, detected_crosswalk, time_ = (
-                self.crosswalk_detector.detect(
-                    usb_camera_frame, self.usb_camera.crosswalk_roi
+            detected_crosswalk = False
+            if not self.race:
+                # crosswalk
+                usb_camera_frame, detected_crosswalk, time_ = (
+                    self.crosswalk_detector.detect(
+                        usb_camera_frame, self.usb_camera.crosswalk_roi
+                    )
                 )
-            )
+                
 
             if detected_crosswalk:
                 ret, pi_camera_frame = self.pi_camera.cap.read()

@@ -26,57 +26,33 @@
 #     ANGLE_VERY_SHARP_RIGHT,
 #     ANGLE_VERY_SHARP_LEFT,
 #     THRESHOLD_VERY_SHARP,
-#     ROI_ORDER,
-#     DETECTOR_TYPE,
 # )
 
 
 # class LaneDetector:
-#     """
-#     A lane detector that supports both LSD and HoughLinesP,
-#     with configurable ROI extraction order.
-#     """
-
 #     def __init__(self, camera, ser, debug=False):
 #         self.camera = camera
 #         self.ser = ser
 #         self.debug = debug
 
-#         # Smoothing of lane center
-#         self.lane_center_history = []
+#         # Lane tracking variables
+#         self.LANE_CENTER_HISTORY = []
 #         self.previous_lane_center = self.camera.width // 2
 
-#         # If using LSD, create the detector
-#         if DETECTOR_TYPE.upper() == "LSD":
-#             self.lsd = cv2.createLineSegmentDetector()
-
-#     def preprocess_frame(self, frame: np.ndarray) -> np.ndarray:
-#         """
-#         Preprocess the frame by converting to grayscale and applying Gaussian blur.
-#         """
+#     def detect(self, frame):
+#         # Preprocess image
 #         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 #         blur = cv2.GaussianBlur(gray, (BLUR_KERNEL, BLUR_KERNEL), 0)
-#         return blur
+#         _, white_lines = cv2.threshold(blur, 200, 255, cv2.THRESH_BINARY)
+#         edges = cv2.Canny(white_lines, CANNY_LOW, CANNY_HIGH)
 
-#     def apply_roi(self, image: np.ndarray) -> np.ndarray:
-#         """
-#         Apply the region of interest (ROI) by cropping the image.
-#         """
-#         return image[
+#         # Apply ROI extraction to edges
+#         roi = edges[
 #             self.camera.ROI_Y_START : self.camera.ROI_Y_END,
 #             self.camera.ROI_X_START : self.camera.ROI_X_END,
 #         ]
 
-#     def detect_edges(self, image: np.ndarray) -> np.ndarray:
-#         """
-#         Apply Canny edge detection on the image.
-#         """
-#         return cv2.Canny(image, CANNY_LOW, CANNY_HIGH)
-
-#     def detect_lines_hough(self, roi: np.ndarray):
-#         """
-#         Use HoughLinesP to detect line segments in the ROI.
-#         """
+#         # Detect lines using Hough Transform (search within ROI)
 #         lines = cv2.HoughLinesP(
 #             roi,
 #             rho=HOUGH_RHO,
@@ -85,68 +61,70 @@
 #             minLineLength=HOUGH_MIN_LINE_LEN,
 #             maxLineGap=HOUGH_MAX_LINE_GAP,
 #         )
-#         return lines
 
-#     def detect_lines_lsd(self, roi: np.ndarray):
-#         """
-#         Use LSD (Line Segment Detector) to detect line segments in the ROI.
-#         """
-#         # For LSD, input should be a grayscale image; no need to do edge detection.
-#         lines, _ = self.lsd.detect(roi)
-#         return lines
+#         # Create debug frame only if needed
+#         debug_frame = frame.copy() if self.debug else None
 
-#     def group_lines(self, lines) -> (list, list):
-#         """
-#         Process detected line segments (from either detector)
-#         and group them into left and right lane candidates.
-#         """
+#         # Optionally draw ROI box for debugging
+#         if self.debug:
+#             cv2.rectangle(
+#                 debug_frame,
+#                 (self.camera.ROI_X_START, self.camera.ROI_Y_START),
+#                 (self.camera.ROI_X_END, self.camera.ROI_Y_END),
+#                 (0, 255, 0),
+#                 2,
+#             )
+
 #         left_x_bottoms = []
 #         right_x_bottoms = []
-#         if lines is None:
-#             return left_x_bottoms, right_x_bottoms
 
-#         # In HoughLinesP lines shape is (N, 1, 4); LSD returns (N,1,4) too.
-#         for line in lines:
-#             x1, y1, x2, y2 = line[0]
-#             # Convert ROI coordinates to full-frame coordinates.
-#             x1_full = x1 + self.camera.ROI_X_START
-#             y1_full = y1 + self.camera.ROI_Y_START
-#             x2_full = x2 + self.camera.ROI_X_START
-#             y2_full = y2 + self.camera.ROI_Y_START
+#         # Process each detected line if any
+#         if lines is not None:
+#             for line in lines:
+#                 x1, y1, x2, y2 = line[0]
+#                 # Convert ROI coordinates to full-frame coordinates
+#                 x1_orig = x1 + self.camera.ROI_X_START
+#                 y1_orig = y1 + self.camera.ROI_Y_START
+#                 x2_orig = x2 + self.camera.ROI_X_START
+#                 y2_orig = y2 + self.camera.ROI_Y_START
 
-#             if x2_full != x1_full:
-#                 slope = (y2_full - y1_full) / (x2_full - x1_full)
-#                 if abs(slope) >= MIN_SLOPE:
-#                     intercept = y1_full - slope * x1_full
-#                     # Calculate the x coordinate at the bottom of the frame.
-#                     x_bottom = (self.camera.height - 1 - intercept) / slope
+#                 # Compute the slope only if the line is not vertical
+#                 if x2_orig != x1_orig:
+#                     slope = (y2_orig - y1_orig) / (x2_orig - x1_orig)
+#                     # Only consider lines with sufficient slope magnitude
+#                     if abs(slope) >= MIN_SLOPE:
+#                         intercept = y1_orig - slope * x1_orig
+#                         # Calculate x coordinate at the bottom of the frame
+#                         x_bottom = (self.camera.height - 1 - intercept) / slope
 
-#                     if slope < 0:
-#                         left_x_bottoms.append(x_bottom)
-#                         if self.debug:
-#                             cv2.line(
-#                                 self.debug_frame,
-#                                 (int(x1_full), int(y1_full)),
-#                                 (int(x2_full), int(y2_full)),
-#                                 (255, 0, 0),
-#                                 2,
-#                             )
-#                     else:
-#                         right_x_bottoms.append(x_bottom)
-#                         if self.debug:
-#                             cv2.line(
-#                                 self.debug_frame,
-#                                 (int(x1_full), int(y1_full)),
-#                                 (int(x2_full), int(y2_full)),
-#                                 (0, 255, 255),
-#                                 2,
-#                             )
-#         return left_x_bottoms, right_x_bottoms
+#                         # Group line as left or right based on slope sign
+#                         if slope < 0:
+#                             left_x_bottoms.append(x_bottom)
+#                             if self.debug:
+#                                 # Draw left lane line in blue if debugging
+#                                 cv2.line(
+#                                     debug_frame,
+#                                     (x1_orig, y1_orig),
+#                                     (x2_orig, y2_orig),
+#                                     (255, 0, 0),
+#                                     2,
+#                                 )
+#                         else:
+#                             right_x_bottoms.append(x_bottom)
+#                             if self.debug:
+#                                 # Draw right lane line in yellow if debugging
+#                                 cv2.line(
+#                                     debug_frame,
+#                                     (x1_orig, y1_orig),
+#                                     (x2_orig, y2_orig),
+#                                     (0, 255, 255),
+#                                     2,
+#                                 )
+#                 else:
+#                     # For vertical lines, you might want to handle separately if needed.
+#                     pass
 
-#     def compute_lane_center(self, left_x_bottoms: list, right_x_bottoms: list) -> float:
-#         """
-#         Compute the lane center by averaging left and right lane positions.
-#         """
+#         # Compute lane center using available left/right measurements.
 #         if left_x_bottoms and right_x_bottoms:
 #             lane_center = (np.mean(left_x_bottoms) + np.mean(right_x_bottoms)) / 2
 #         elif left_x_bottoms:
@@ -155,172 +133,103 @@
 #             lane_center = np.mean(right_x_bottoms) - self.camera.LANE_WIDTH / 2
 #         else:
 #             lane_center = self.previous_lane_center
+#             full_command = f"command {ANGLE_MID_RIGHT} 120"
+#             self.ser.send(full_command)
+#             return frame
 
-#         self.lane_center_history.append(lane_center)
-#         if len(self.lane_center_history) > HISTORY_LEN:
-#             self.lane_center_history.pop(0)
-#         return np.mean(self.lane_center_history)
+#         # Maintain a moving average for lane center
+#         self.LANE_CENTER_HISTORY.append(lane_center)
+#         if len(self.LANE_CENTER_HISTORY) > HISTORY_LEN:
+#             self.LANE_CENTER_HISTORY.pop(0)
+#         lane_center_avg = np.mean(self.LANE_CENTER_HISTORY)
 
-#     def map_error_to_steering(self, error: float) -> str:
-#         """
-#         Map the lane center error to a specific steering command.
-#         """
-#         if abs(error) < THRESHOLD_SLOW:
-#             return ANGLE_CENTER
-#         elif error > THRESHOLD_VERY_SHARP:
-#             return ANGLE_VERY_SHARP_RIGHT
-#         elif error > THRESHOLD_SHARP:
-#             return ANGLE_SHARP_RIGHT
-#         elif error > THRESHOLD_MID:
-#             return ANGLE_MID_RIGHT
-#         elif error > THRESHOLD_SLOW:
-#             return ANGLE_SLOW_RIGHT
-#         elif error < -THRESHOLD_VERY_SHARP:
-#             return ANGLE_VERY_SHARP_LEFT
-#         elif error < -THRESHOLD_SHARP:
-#             return ANGLE_SHARP_LEFT
-#         elif error < -THRESHOLD_MID:
-#             return ANGLE_MID_LEFT
-#         elif error < -THRESHOLD_SLOW:
-#             return ANGLE_SLOW_LEFT
-#         else:
-#             return ANGLE_CENTER
-
-#     def draw_debug_info(
-#         self,
-#         debug_frame: np.ndarray,
-#         lane_center: float,
-#         error: float,
-#         steering_command: str,
-#         speed: int,
-#     ) -> None:
-#         """
-#         Draw debug visualizations on the frame.
-#         """
-#         # Draw the computed lane center (cyan line).
-#         cv2.line(
-#             debug_frame,
-#             (int(lane_center), 0),
-#             (int(lane_center), self.camera.height),
-#             (0, 255, 255),
-#             2,
-#         )
-#         # Draw the fixed center line (light blue).
-#         cv2.line(
-#             debug_frame,
-#             (FIXED_CENTER, 0),
-#             (FIXED_CENTER, self.camera.height),
-#             (255, 255, 0),
-#             2,
-#         )
-#         # Overlay text information.
-#         cv2.putText(
-#             debug_frame,
-#             f"Steering: {steering_command}",
-#             (10, 30),
-#             cv2.FONT_HERSHEY_SIMPLEX,
-#             1,
-#             (0, 255, 0),
-#             2,
-#         )
-#         cv2.putText(
-#             debug_frame,
-#             f"Speed: {speed}",
-#             (10, 60),
-#             cv2.FONT_HERSHEY_SIMPLEX,
-#             1,
-#             (0, 255, 0),
-#             2,
-#         )
-#         cv2.putText(
-#             debug_frame,
-#             f"Error: {int(error)} px",
-#             (10, 90),
-#             cv2.FONT_HERSHEY_SIMPLEX,
-#             1,
-#             (255, 255, 0),
-#             2,
-#         )
-
-#     def detect(self, frame: np.ndarray) -> np.ndarray:
-#         """
-#         Process a frame to detect lanes and send commands via serial.
-#         Chooses preprocessing order and detector based on global flags.
-#         """
-#         if self.debug:
-#             self.debug_frame = frame.copy()
-
-#         # --- Determine ROI extraction order ---
-#         if ROI_ORDER.lower() == "before":
-#             # Crop ROI before any processing.
-#             roi_frame = self.apply_roi(frame)
-#             processed = self.preprocess_frame(roi_frame)
-#         else:
-#             # Process full frame and then crop ROI.
-#             processed_full = self.preprocess_frame(frame)
-#             processed = self.apply_roi(processed_full)
-
-#         # For HoughLinesP, apply Canny edge detection.
-#         if DETECTOR_TYPE.upper() == "HOUGH":
-#             roi_for_detection = self.detect_edges(processed)
-#         else:
-#             roi_for_detection = processed
-
-#         # If debugging and ROI extraction is after processing, draw ROI rectangle.
-#         if self.debug and ROI_ORDER.lower() == "after":
-#             cv2.rectangle(
-#                 self.debug_frame,
-#                 (self.camera.ROI_X_START, self.camera.ROI_Y_START),
-#                 (self.camera.ROI_X_END, self.camera.ROI_Y_END),
-#                 (0, 255, 0),
-#                 2,
-#             )
-#         elif self.debug and ROI_ORDER.lower() == "before":
-#             # When ROI extraction is done first, the ROI covers the full image of "processed".
-#             # To map it back to the original frame, draw the ROI rectangle.
-#             cv2.rectangle(
-#                 self.debug_frame,
-#                 (self.camera.ROI_X_START, self.camera.ROI_Y_START),
-#                 (self.camera.ROI_X_END, self.camera.ROI_Y_END),
-#                 (0, 255, 0),
-#                 2,
-#             )
-
-#         # --- Line detection ---
-#         if DETECTOR_TYPE.upper() == "LSD":
-#             lines = self.detect_lines_lsd(roi_for_detection)
-#         else:
-#             lines = self.detect_lines_hough(roi_for_detection)
-
-#         left_x_bottoms, right_x_bottoms = self.group_lines(lines)
-#         lane_center_avg = self.compute_lane_center(left_x_bottoms, right_x_bottoms)
+#         # Compute error relative to a fixed reference (desired center)
 #         error = lane_center_avg - FIXED_CENTER
 
-#         steering_command = self.map_error_to_steering(error)
-#         # Reduce speed if turning sharply.
-#         speed = (
-#             MODE.default.turn
-#             if steering_command
-#             in [
-#                 ANGLE_SHARP_LEFT,
-#                 ANGLE_SHARP_RIGHT,
-#                 ANGLE_VERY_SHARP_LEFT,
-#                 ANGLE_VERY_SHARP_RIGHT,
-#             ]
-#             else MODE.default.forward
-#         )
+#         # Determine steering command based on error thresholds
+#         if abs(error) < THRESHOLD_SLOW:
+#             steering_command = ANGLE_CENTER
+#         elif error > THRESHOLD_VERY_SHARP:
+#             steering_command = ANGLE_VERY_SHARP_RIGHT
+#         elif error > THRESHOLD_SHARP:
+#             steering_command = ANGLE_SHARP_RIGHT
+#         elif error > THRESHOLD_MID:
+#             steering_command = ANGLE_MID_RIGHT
+#         elif error > THRESHOLD_SLOW:
+#             steering_command = ANGLE_SLOW_RIGHT
+#         elif error < -THRESHOLD_SHARP:
+#             steering_command = ANGLE_SHARP_LEFT
+#         elif error < -THRESHOLD_MID:
+#             steering_command = ANGLE_MID_LEFT
+#         elif error < -THRESHOLD_SLOW:
+#             steering_command = ANGLE_SLOW_LEFT
+#         elif error < -THRESHOLD_VERY_SHARP:
+#             steering_command = ANGLE_VERY_SHARP_LEFT
+#         else:
+#             steering_command = ANGLE_MID_RIGHT
 
-#         # Send command via serial.
+#         # Set speed based on steering command
+#         if steering_command in [
+#             ANGLE_SHARP_LEFT,
+#             ANGLE_SHARP_RIGHT,
+#             ANGLE_VERY_SHARP_LEFT,
+#             ANGLE_VERY_SHARP_RIGHT,
+#         ]:
+#             speed = MODE.default.turn
+#         else:
+#             speed = MODE.default.forward
+
+#         # Build full command string and send it via serial
 #         full_command = f"command {steering_command} {speed}"
 #         self.ser.send(full_command)
 #         self.previous_lane_center = lane_center_avg
 
-#         if self.debug:
-#             self.draw_debug_info(
-#                 self.debug_frame, lane_center_avg, error, steering_command, speed
+#         # Draw debug visualization only if enabled
+#         if self.debug and debug_frame is not None:
+#             cv2.line(
+#                 debug_frame,
+#                 (int(lane_center_avg), 0),
+#                 (int(lane_center_avg), self.camera.height),
+#                 (0, 255, 255),
+#                 2,
 #             )
-#             return self.debug_frame
+#             cv2.line(
+#                 debug_frame,
+#                 (FIXED_CENTER, 0),
+#                 (FIXED_CENTER, self.camera.height),
+#                 (255, 255, 0),
+#                 2,
+#             )
+#             cv2.putText(
+#                 debug_frame,
+#                 f"Steering: {steering_command}",
+#                 (10, 30),
+#                 cv2.FONT_HERSHEY_SIMPLEX,
+#                 1,
+#                 (0, 255, 0),
+#                 2,
+#             )
+#             cv2.putText(
+#                 debug_frame,
+#                 f"Speed: {speed}",
+#                 (10, 60),
+#                 cv2.FONT_HERSHEY_SIMPLEX,
+#                 1,
+#                 (0, 255, 0),
+#                 2,
+#             )
+#             cv2.putText(
+#                 debug_frame,
+#                 f"Error: {int(error)} px",
+#                 (10, 90),
+#                 cv2.FONT_HERSHEY_SIMPLEX,
+#                 1,
+#                 (255, 255, 0),
+#                 2,
+#             )
+#             return debug_frame
 #         else:
+#             # If not in debug mode, return the original frame (or optionally None)
 #             return frame
 import cv2
 import numpy as np
@@ -358,10 +267,24 @@ class LaneDetector:
         self.camera = camera
         self.ser = ser
         self.debug = debug
-
-        # Lane tracking variables
         self.LANE_CENTER_HISTORY = []
         self.previous_lane_center = self.camera.width // 2
+
+    def get_points_along_line(self, x1, y1, x2, y2):
+        """Generate (x, y) points along a line segment from (x1, y1) to (x2, y2)."""
+        points = []
+        if y1 > y2:
+            x1, y1, x2, y2 = x2, y2, x1, y1  # Ensure y1 <= y2
+        dy = y2 - y1
+        if dy == 0:  # Horizontal line
+            x_start, x_end = min(x1, x2), max(x1, x2)
+            for x in range(x_start, x_end + 1):
+                points.append((x, y1))
+        else:
+            for y in range(y1, y2 + 1):
+                x = x1 + (x2 - x1) * (y - y1) / dy
+                points.append((int(x), y))
+        return points
 
     def detect(self, frame):
         # Preprocess image
@@ -376,7 +299,7 @@ class LaneDetector:
             self.camera.ROI_X_START : self.camera.ROI_X_END,
         ]
 
-        # Detect lines using Hough Transform (search within ROI)
+        # Detect lines using Hough Transform
         lines = cv2.HoughLinesP(
             roi,
             rho=HOUGH_RHO,
@@ -386,10 +309,7 @@ class LaneDetector:
             maxLineGap=HOUGH_MAX_LINE_GAP,
         )
 
-        # Create debug frame only if needed
         debug_frame = frame.copy() if self.debug else None
-
-        # Optionally draw ROI box for debugging
         if self.debug:
             cv2.rectangle(
                 debug_frame,
@@ -399,33 +319,28 @@ class LaneDetector:
                 2,
             )
 
-        left_x_bottoms = []
-        right_x_bottoms = []
+        left_lane_points = []
+        right_lane_points = []
 
-        # Process each detected line if any
+        # Process detected lines
         if lines is not None:
             for line in lines:
                 x1, y1, x2, y2 = line[0]
-                # Convert ROI coordinates to full-frame coordinates
+                # Convert to full-frame coordinates
                 x1_orig = x1 + self.camera.ROI_X_START
                 y1_orig = y1 + self.camera.ROI_Y_START
                 x2_orig = x2 + self.camera.ROI_X_START
                 y2_orig = y2 + self.camera.ROI_Y_START
 
-                # Compute the slope only if the line is not vertical
                 if x2_orig != x1_orig:
                     slope = (y2_orig - y1_orig) / (x2_orig - x1_orig)
-                    # Only consider lines with sufficient slope magnitude
                     if abs(slope) >= MIN_SLOPE:
-                        intercept = y1_orig - slope * x1_orig
-                        # Calculate x coordinate at the bottom of the frame
-                        x_bottom = (self.camera.height - 1 - intercept) / slope
-
-                        # Group line as left or right based on slope sign
+                        points = self.get_points_along_line(
+                            x1_orig, y1_orig, x2_orig, y2_orig
+                        )
                         if slope < 0:
-                            left_x_bottoms.append(x_bottom)
+                            left_lane_points.extend(points)
                             if self.debug:
-                                # Draw left lane line in blue if debugging
                                 cv2.line(
                                     debug_frame,
                                     (x1_orig, y1_orig),
@@ -434,9 +349,8 @@ class LaneDetector:
                                     2,
                                 )
                         else:
-                            right_x_bottoms.append(x_bottom)
+                            right_lane_points.extend(points)
                             if self.debug:
-                                # Draw right lane line in yellow if debugging
                                 cv2.line(
                                     debug_frame,
                                     (x1_orig, y1_orig),
@@ -444,33 +358,59 @@ class LaneDetector:
                                     (0, 255, 255),
                                     2,
                                 )
-                else:
-                    # For vertical lines, you might want to handle separately if needed.
-                    pass
 
-        # Compute lane center using available left/right measurements.
-        if left_x_bottoms and right_x_bottoms:
-            lane_center = (np.mean(left_x_bottoms) + np.mean(right_x_bottoms)) / 2
-        elif left_x_bottoms:
-            lane_center = np.mean(left_x_bottoms) + self.camera.LANE_WIDTH / 2
-        elif right_x_bottoms:
-            lane_center = np.mean(right_x_bottoms) - self.camera.LANE_WIDTH / 2
+        # Fit polynomials (x = a*y^2 + b*y + c)
+        left_fit = (
+            np.polyfit(
+                [p[1] for p in left_lane_points], [p[0] for p in left_lane_points], 2
+            )
+            if left_lane_points
+            else None
+        )
+        right_fit = (
+            np.polyfit(
+                [p[1] for p in right_lane_points], [p[0] for p in right_lane_points], 2
+            )
+            if right_lane_points
+            else None
+        )
+
+        # Evaluate polynomials at the bottom of the frame
+        y_eval = self.camera.height - 1
+        x_left = (
+            left_fit[0] * y_eval**2 + left_fit[1] * y_eval + left_fit[2]
+            if left_fit is not None
+            else None
+        )
+        x_right = (
+            right_fit[0] * y_eval**2 + right_fit[1] * y_eval + right_fit[2]
+            if right_fit is not None
+            else None
+        )
+
+        # Compute lane center
+        if x_left is not None and x_right is not None:
+            lane_center = (x_left + x_right) / 2
+        elif x_left is not None:
+            lane_center = x_left + self.camera.LANE_WIDTH / 2
+        elif x_right is not None:
+            lane_center = x_right - self.camera.LANE_WIDTH / 2
         else:
             lane_center = self.previous_lane_center
             full_command = f"command {ANGLE_MID_RIGHT} 120"
             self.ser.send(full_command)
             return frame
 
-        # Maintain a moving average for lane center
+        # Moving average
         self.LANE_CENTER_HISTORY.append(lane_center)
         if len(self.LANE_CENTER_HISTORY) > HISTORY_LEN:
             self.LANE_CENTER_HISTORY.pop(0)
         lane_center_avg = np.mean(self.LANE_CENTER_HISTORY)
 
-        # Compute error relative to a fixed reference (desired center)
+        # Compute error
         error = lane_center_avg - FIXED_CENTER
 
-        # Determine steering command based on error thresholds
+        # Determine steering command
         if abs(error) < THRESHOLD_SLOW:
             steering_command = ANGLE_CENTER
         elif error > THRESHOLD_VERY_SHARP:
@@ -481,18 +421,18 @@ class LaneDetector:
             steering_command = ANGLE_MID_RIGHT
         elif error > THRESHOLD_SLOW:
             steering_command = ANGLE_SLOW_RIGHT
+        elif error < -THRESHOLD_VERY_SHARP:
+            steering_command = ANGLE_VERY_SHARP_LEFT
         elif error < -THRESHOLD_SHARP:
             steering_command = ANGLE_SHARP_LEFT
         elif error < -THRESHOLD_MID:
             steering_command = ANGLE_MID_LEFT
         elif error < -THRESHOLD_SLOW:
             steering_command = ANGLE_SLOW_LEFT
-        elif error < -THRESHOLD_VERY_SHARP:
-            steering_command = ANGLE_VERY_SHARP_LEFT
         else:
             steering_command = ANGLE_MID_RIGHT
 
-        # Set speed based on steering command
+        # Set speed
         if steering_command in [
             ANGLE_SHARP_LEFT,
             ANGLE_SHARP_RIGHT,
@@ -503,13 +443,35 @@ class LaneDetector:
         else:
             speed = MODE.default.forward
 
-        # Build full command string and send it via serial
         full_command = f"command {steering_command} {speed}"
         self.ser.send(full_command)
         self.previous_lane_center = lane_center_avg
 
-        # Draw debug visualization only if enabled
+        # Debug visualization
         if self.debug and debug_frame is not None:
+            # Draw fitted polynomials
+            if left_fit is not None:
+                ploty = np.linspace(
+                    0, self.camera.height - 1, self.camera.height, dtype=int
+                )
+                leftx = left_fit[0] * ploty**2 + left_fit[1] * ploty + left_fit[2]
+                for i in range(len(ploty)):
+                    if 0 <= int(leftx[i]) < self.camera.width:
+                        cv2.circle(
+                            debug_frame, (int(leftx[i]), ploty[i]), 1, (255, 0, 0), 1
+                        )
+            if right_fit is not None:
+                ploty = np.linspace(
+                    0, self.camera.height - 1, self.camera.height, dtype=int
+                )
+                rightx = right_fit[0] * ploty**2 + right_fit[1] * ploty + right_fit[2]
+                for i in range(len(ploty)):
+                    if 0 <= int(rightx[i]) < self.camera.width:
+                        cv2.circle(
+                            debug_frame, (int(rightx[i]), ploty[i]), 1, (0, 255, 255), 1
+                        )
+
+            # Draw lane center and fixed center
             cv2.line(
                 debug_frame,
                 (int(lane_center_avg), 0),
@@ -552,6 +514,5 @@ class LaneDetector:
                 2,
             )
             return debug_frame
-        else:
-            # If not in debug mode, return the original frame (or optionally None)
-            return frame
+
+        return frame
