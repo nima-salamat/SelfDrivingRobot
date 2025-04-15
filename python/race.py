@@ -54,12 +54,11 @@ class Robot:
     def loop(self):
         while True:
             ret, usb_camera_frame = self.usb_camera.cap.read()
-            if 0.2 <= self.ultrasonic.distance < 0.21:
+            if 0.2 <= self.ultrasonic.distance <= 0.25:
+                self.ser.send("center 0")
+                time.sleep(1)
                 self.handle_pass_block()
-            elif self.ultrasonic.distance < 0.2:
-                while 0.2 <= self.ultrasonic.distance < 0.25:
-                    self.ser.send("center -150")
-                self.handle_pass_block()
+          
 
             usb_camera_frame = self.lane_detector.detect(usb_camera_frame)
             if self.debug:
