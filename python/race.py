@@ -42,9 +42,6 @@ class Robot:
         self.ser.send("sharp right 160")
         time.sleep(1)
 
-        self.ser.send("center 160")
-        time.sleep(2)
-
         self.ser.send("sharp right 160")
         time.sleep(1)
 
@@ -58,7 +55,11 @@ class Robot:
                 self.ser.send("center 0")
                 time.sleep(1)
                 self.handle_pass_block()
-          
+            elif self.ultrasonic.distance < 0.2:
+                self.ser.send("center 0")
+                time.sleep(0.3)
+                while self.ultrasonic < 0.2:
+                    self.ser.send("center -150")
 
             usb_camera_frame = self.lane_detector.detect(usb_camera_frame)
             if self.debug:
