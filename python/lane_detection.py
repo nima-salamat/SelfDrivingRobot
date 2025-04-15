@@ -1,111 +1,57 @@
 import cv2
 import numpy as np
-from collections import deque
-import time
-from config import BLUR_KERNEL
+from config import (
+    HOUGH_RHO,
+    HOUGH_THETA,
+    HOUGH_THRESHOLD,
+    HOUGH_MAX_LINE_GAP,
+    HOUGH_MIN_LINE_LEN,
+    BLUR_KERNEL,
+    CANNY_HIGH,
+    CANNY_LOW,
+    MIN_SLOPE,
+    HISTORY_LEN,
+    THRESHOLD_MID,
+    THRESHOLD_SHARP,
+    THRESHOLD_SLOW,
+    FIXED_CENTER,
+    MODE,
+    ANGLE_SHARP_LEFT,
+    ANGLE_MID_LEFT,
+    ANGLE_SLOW_LEFT,
+    ANGLE_CENTER,
+    ANGLE_SLOW_RIGHT,
+    ANGLE_MID_RIGHT,
+    ANGLE_SHARP_RIGHT,
+    ANGLE_VERY_SHARP_RIGHT,
+    ANGLE_VERY_SHARP_LEFT,
+    THRESHOLD_VERY_SHARP,
+)
 
 
-class CrosswalkDetector:
-    def __init__(
-        self,
-        hough_rho=1,
-        hough_theta=np.pi / 180,
-        hough_threshold=50,
-        hough_min_line_length=15,
-        hough_max_line_gap=100,
-        horizontal_angle_threshold=25,
-        vertical_angle_threshold=20,
-        min_horiz=3,
-        min_vert=3,
-        min_line_length=10,
-        max_line_length=200,
-        spacing_tolerance=0.5,
-        no_detection_threshold=1,
-        history_length=15,
-        min_history_detections=5,
-        debug=False,
-        ser=None,
-    ):
-        self.hough_rho = hough_rho
-        self.hough_theta = hough_theta
-        self.hough_threshold = hough_threshold
-        self.hough_min_line_length = hough_min_line_length
-        self.hough_max_line_gap = hough_max_line_gap
-        self.horizontal_angle_threshold = horizontal_angle_threshold
-        self.vertical_angle_threshold = vertical_angle_threshold
-        self.min_horiz = min_horiz
-        self.min_vert = min_vert
-        self.min_line_length = min_line_length
-        self.max_line_length = max_line_length
-        self.spacing_tolerance = spacing_tolerance
-        self.no_detection_threshold = no_detection_threshold
-        self.history_length = history_length
-        self.min_history_detections = min_history_detections
-        self.detection_history = deque(maxlen=history_length)
-        self.debug = debug
+class LaneDetector:
+    def __init__(self, camera, ser, debug=False):
+        self.camera = camera
         self.ser = ser
-        self.crosswalk_sent = False
-        self.no_detection_count = 0
-        self.time_ = None
+        self.debug = debug
+        self.LANE_CENTER_HISTORY = []
+        self.previous_lane_center = self.camera.width // 2
 
-    def preprocess_frame(self, frame, roi):
-        x, y, w, h = roi
-        cropped = frame[y : y + h, x : x + w]
-        hsv = cv2.cvtColor(cropped, cv2.COLOR_BGR2HSV)
-        lower_white = np.array([0, 0, 200])
-        upper_white = np.array([180, 30, 255])
-        mask = cv2.inRange(hsv, lower_white, upper_white)
-        blur = cv2.GaussianBlur(mask, (BLUR_KERNEL, BLUR_KERNEL), 0)
-        return cropped, blur
-
-    def detect_edges(self, mask):
-        return cv2.Canny(mask, 50, 255)
-
-    def detect_lines(self, edges):
-        return cv2.HoughLinesP(
-            edges,
-            rho=self.hough_rho,
-            theta=self.hough_theta,
-            threshold=self.hough_threshold,
-            minLineLength=self.hough_min_line_length,
-            maxLineGap=self.hough_max_line_gap,
-        )
-
-    def filter_lines_by_angle(self, lines):
-        horizontal_lines, vertical_lines = [], []
-        if lines is not None:
-            for line in lines:
-                x1, y1, x2, y2 = line[0]
-                length = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-                if self.min_line_length < length < self.max_line_length:
-                    angle = np.degrees(np.arctan2(y2 - y1, x2 - x1))
-                    if abs(angle) < self.horizontal_angle_threshold:
-                        horizontal_lines.append((x1, y1, x2, y2))
-                    elif abs(abs(angle) - 90) < self.vertical_angle_threshold:
-                        vertical_lines.append((x1, y1, x2, y2))
-        return horizontal_lines, vertical_lines
-
-    def check_parallel_lines(self, lines, is_horizontal=True):
-        if is_horizontal:
-            coords = [min(y1, y2) for _, y1, _, y2 in lines]
+    def get_points_along_line(self, x1, y1, x2, y2):
+        """Generate (x, y) points along a line segment from (x1, y1) to (x2, y2)."""
+        points = []
+        if y1 > y2:
+            x1, y1, x2, y2 = x2, y2, x1, y1  # Ensure y1 <= y2
+        dy = y2 - y1
+        if dy == 0:  # Horizontal line
+            x_start, x_end = min(x1, x2), max(x1, x2)
+            for x in range(x_start, x_end + 1):
+                points.append((x, y1))
         else:
-            coords = [min(x1, x2) for x1, _, x2, _ in lines]
-        coords.sort()
-        if len(coords) < 2:
-            return False
-        spacings = [coords[i + 1] - coords[i] for i in range(len(coords) - 1)]
-        if not spacings:
-            return False
-        mean_spacing = np.mean(spacings)
-        std_spacing = np.std(spacings)
-        return std_spacing < mean_spacing * self.spacing_tolerance
-
-    def is_crosswalk(self, horizontal_lines, vertical_lines):
-        horiz_parallel = self.check_parallel_lines(horizontal_lines, is_horizontal=True)
-        vert_parallel = self.check_parallel_lines(vertical_lines, is_horizontal=False)
-        return (len(horizontal_lines) >= self.min_horiz and horiz_parallel) or (
-            len(vertical_lines) >= self.min_vert and vert_parallel
-        )
+            for y in range(y1, y2 + 1):
+                x = x1 + (x2 - x1) * (y - y1) / dy
+                points.append((int(x), y))
+        return points
 
     def detect(self, frame):
         # Preprocess image
@@ -140,10 +86,10 @@ class CrosswalkDetector:
                 2,
             )
 
-        left_lines = []
-        right_lines = []
+        left_lane_points = []
+        right_lane_points = []
 
-        # Process detected lines and categorize them
+        # Process detected lines
         if lines is not None:
             for line in lines:
                 x1, y1, x2, y2 = line[0]
@@ -156,47 +102,29 @@ class CrosswalkDetector:
                 if x2_orig != x1_orig:
                     slope = (y2_orig - y1_orig) / (x2_orig - x1_orig)
                     if abs(slope) >= MIN_SLOPE:
-                        # Determine the bottom x-coordinate (higher y-value)
-                        x_bottom = x1_orig if y1_orig > y2_orig else x2_orig
-                        line_data = (x1_orig, y1_orig, x2_orig, y2_orig, x_bottom)
+                        points = self.get_points_along_line(
+                            x1_orig, y1_orig, x2_orig, y2_orig
+                        )
                         if slope < 0:
-                            left_lines.append(line_data)
+                            left_lane_points.extend(points)
+                            if self.debug:
+                                cv2.line(
+                                    debug_frame,
+                                    (x1_orig, y1_orig),
+                                    (x2_orig, y2_orig),
+                                    (255, 0, 0),
+                                    2,
+                                )
                         else:
-                            right_lines.append(line_data)
-
-        # Select the leftmost line for each category
-        leftmost_left_line = None
-        leftmost_right_line = None
-
-        if left_lines:
-            # Leftmost left line: smallest x-coordinate at bottom
-            leftmost_left_line = min(left_lines, key=lambda l: l[4])  # l[4] is x_bottom
-
-        if right_lines:
-            # Leftmost right line: smallest x-coordinate at bottom
-            leftmost_right_line = min(right_lines, key=lambda l: l[4])  # l[4] is x_bottom
-
-        # Get points for the selected lines
-        left_lane_points = (
-            self.get_points_along_line(
-                leftmost_left_line[0],
-                leftmost_left_line[1],
-                leftmost_left_line[2],
-                leftmost_left_line[3],
-            )
-            if leftmost_left_line
-            else []
-        )
-        right_lane_points = (
-            self.get_points_along_line(
-                leftmost_right_line[0],
-                leftmost_right_line[1],
-                leftmost_right_line[2],
-                leftmost_right_line[3],
-            )
-            if leftmost_right_line
-            else []
-        )
+                            right_lane_points.extend(points)
+                            if self.debug:
+                                cv2.line(
+                                    debug_frame,
+                                    (x1_orig, y1_orig),
+                                    (x2_orig, y2_orig),
+                                    (0, 255, 255),
+                                    2,
+                                )
 
         # Fit polynomials (x = a*y^2 + b*y + c)
         left_fit = (
@@ -288,24 +216,6 @@ class CrosswalkDetector:
 
         # Debug visualization
         if self.debug and debug_frame is not None:
-            # Draw selected lines
-            if leftmost_left_line:
-                cv2.line(
-                    debug_frame,
-                    (leftmost_left_line[0], leftmost_left_line[1]),
-                    (leftmost_left_line[2], leftmost_left_line[3]),
-                    (255, 0, 0),
-                    2,
-                )
-            if leftmost_right_line:
-                cv2.line(
-                    debug_frame,
-                    (leftmost_right_line[0], leftmost_right_line[1]),
-                    (leftmost_right_line[2], leftmost_right_line[3]),
-                    (0, 255, 255),
-                    2,
-                )
-
             # Draw fitted polynomials
             if left_fit is not None:
                 ploty = np.linspace(
