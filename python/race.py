@@ -1,8 +1,7 @@
 import cv2
 import time
-import numpy as np
 from camera import UsbCamera
-from config import FRAME_DELAY, DEBUG, TRY_EXCEPT, ULTERASONIC_ENABLED
+from config import FRAME_DELAY, DEBUG, TRY_EXCEPT
 from lane_detection import LaneDetector
 import serial_connector
 import sys
@@ -37,19 +36,19 @@ class Robot:
         self.ultrasonic = DistanceSensor(echo=17, trigger=4)
 
     def handle_pass_block(self):
-        self.ser("sharp left 160")
+        self.ser.send("sharp left 160")
         time.sleep(1)
 
-        self.ser("sharp right 160")
+        self.ser.send("sharp right 160")
         time.sleep(1)
 
-        self.ser("center 160")
+        self.ser.send("center 160")
         time.sleep(2)
 
-        self.ser("sharp right 160")
+        self.ser.send("sharp right 160")
         time.sleep(1)
 
-        self.ser("sharp left 160")
+        self.ser.send("sharp left 160")
         time.sleep(1)
 
     def loop(self):
