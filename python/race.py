@@ -56,7 +56,7 @@ class Robot:
     def loop(self):
         while True:
             ret, usb_camera_frame = self.usb_camera.cap.read()
-            if 0.2 <= self.ultrasonic.distance < 0.25:
+            if 0.2 <= self.ultrasonic.distance < 0.21:
                 self.handle_pass_block()
             elif self.ultrasonic.distance < 0.2:
                 while 0.2 <= self.ultrasonic.distance < 0.25:

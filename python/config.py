@@ -2,13 +2,13 @@ import numpy as np
 
 # ---------------- Adjustable Parameters ----------------
 # ROI parameters (fractions of frame size)
-ROI_Y_START_FRAC = 0.65  # Top of ROI (bottom 35% of frame)
-ROI_X_START_FRAC = 0.4  # Left edge for lane detection
-ROI_X_END_FRAC = 0.8  # Right edge for lane detection
+ROI_Y_START_FRAC = 0.6  # Top of ROI (bottom 35% of frame)
+ROI_X_START_FRAC = 0.3  # Left edge for lane detection
+ROI_X_END_FRAC = 0.74  # Right edge for lane detection
 ROI_WIDTH_FRAC = ROI_X_END_FRAC - ROI_X_START_FRAC
 
 # Slope thresholds for lane lines
-MIN_SLOPE = 0.7  # More lenient slope filter
+MIN_SLOPE = 0.75  # More lenient slope filter
 
 # Hough transform parameters
 HOUGH_RHO = 1
@@ -25,9 +25,9 @@ CANNY_HIGH = 150
 BLUR_KERNEL = 5
 
 # Steering thresholds (in pixels)
-THRESHOLD_SLOW = 20  # Slight deviation
-THRESHOLD_MID = 45  # Moderate deviation
-THRESHOLD_SHARP = 70  # Sharp turn threshold
+THRESHOLD_SLOW = 15  # Slight deviation
+THRESHOLD_MID = 30  # Moderate deviation
+THRESHOLD_SHARP = 80  # Sharp turn threshold
 THRESHOLD_VERY_SHARP = 110  # Sharp turn threshold
 
 ANGLE_SHARP_LEFT = 20
@@ -45,14 +45,14 @@ ANGLE_VERY_SHARP_LEFT = 0
 HISTORY_LEN = 3
 
 # Estimated lane width in pixels (for single-lane detection)
-LANE_WIDTH_FRAC = 0.3
+LANE_WIDTH_FRAC = 0.45
 
 # Fixed center x-position for error calculation
-FIXED_CENTER = 260
+FIXED_CENTER = 245
 
 # Camera and production settings
 CAMERA_INDEX = 0
-TARGET_FPS = 45
+TARGET_FPS = 80
 FRAME_DELAY = 1 / TARGET_FPS
 
 # Serial port settings
@@ -84,8 +84,8 @@ class MODE:
     class Center:
         """Medium"""
 
-        forward = 150
-        turn = 130
+        forward = 160
+        turn = 150
 
     class Trot:
         """Medium Slow"""
