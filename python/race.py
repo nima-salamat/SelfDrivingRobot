@@ -20,7 +20,6 @@ class Robot:
             self.debug = True
         else:
             self.debug = DEBUG
-        self.debug = True
 
         self.try_except = TRY_EXCEPT
 
