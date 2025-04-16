@@ -41,7 +41,6 @@ class Robot:
 
         # Detectors
        
-        self.crosswalk_detector = CrosswalkDetector(debug=self.debug, ser=self.ser)
         self.lane_detector = LaneDetector(self.usb_camera, self.ser, debug=self.debug)
         self.apriltag_detector = ApriltagDetector()
         self.running = True
@@ -50,6 +49,19 @@ class Robot:
         self.last_apriltag = (None, None) 
         self.intersection_navigator = IntersectionNavigator(self.ser)
         self.tolerance = 2
+        
+        width, height = self.usb_camera.width, self.usb_camera.height
+        self.crosswalk_roi_top = [
+            [height - (height // 5), height],
+            [0, width],
+        ]
+        self.crosswalk_roi_bottom = [
+            [height - (height // 5), height],
+            [0, width],
+        ]
+        self.crosswalk_bottom_active =  False
+        self.crosswalk_top = CrosswalkDetector()
+        self.crosswalk_bottom = CrosswalkDetector()
         
         if "no-stop" in args:
             self.running = False
@@ -79,14 +91,25 @@ class Robot:
             # camera read
             ret, usb_camera_frame = self.usb_camera.cap.read()
             # crosswalk
-            usb_camera_frame, detected_crosswalk, time_ = (
-                self.crosswalk_detector.detect(
-                    usb_camera_frame, self.usb_camera.crosswalk_roi
+            usb_camera_frame, detected_crosswalk_top, time_ = (
+                self.crosswalk_roi_top.detect(
+                    usb_camera_frame, 
                 )
             )
+            detected_crosswalk_bottom = False
+            if self.crosswalk_bottom_active:
+                usb_camera_frame, detected_crosswalk_bottom, time_ = (
+                    self.crosswalk_roi_top.detect(
+                        usb_camera_frame,
+                    )
+                )
                 
+               
+                
+         
 
-            if detected_crosswalk:
+            if detected_crosswalk_top or self.crosswalk_bottom_active:
+                self.crosswalk_bottom_active = True
                 ret, pi_camera_frame = self.pi_camera.cap.read()
             
                 # apriltag
@@ -94,29 +117,24 @@ class Robot:
                 print(label) if label != "no sign" else None
                 
                 if label != "no sign":
-                    self.last_apriltag = ()
-                    
+                    self.last_apriltag = (label, time.time())
                 
+                if detected_crosswalk_bottom:
+                    self.intersection_navigator.navigate_by_tag(label)
+                    continue
+                    
                 if self.debug:      
                     cv2.imshow("pi", pi_camera_frame)
 
             # lane
-            if not detected_crosswalk:
-                usb_camera_frame = self.lane_detector.detect(usb_camera_frame)
+            if not self.crosswalk_bottom_active:
+                    usb_camera_frame = self.lane_detector.detect(usb_camera_frame)
 
             else:
-                if time_ + 3.1 < time.time():
-                    self.ser.send("center 120")
-                else:
-                    self.ser.send("center 0")
+                
+                self.ser.send("center 130")
 
-                if (
-                    self.last_apriltag[0] is not None
-                    and (time.time() - self.last_apriltag[1]) < self.tolerance
-                ):
-                    # Navigate
-                    self.intersection_navigator.navigate_by_tag(label)
-                    self.last_apriltag = (None, None)
+                
 
             if self.debug:
                 cv2.imshow("usb", usb_camera_frame)
