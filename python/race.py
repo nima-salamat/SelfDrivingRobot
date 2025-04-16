@@ -21,7 +21,7 @@ class Robot:
             and args[1].lower() == "debug"
             and args[2].lower() in ["true", "1", "y", "active"]
         ):
-            self.debug = True
+            sel mf.debug = True
         else:
             self.debug = DEBUG
 
