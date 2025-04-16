@@ -91,14 +91,14 @@ class Robot:
             # camera read
             ret, usb_camera_frame = self.usb_camera.cap.read()
             # crosswalk
-            usb_camera_frame, detected_crosswalk_top, time_ = (
+            usb_camera_frame, detected_crosswalk_top = (
                 self.crosswalk_roi_top.detect(
                     usb_camera_frame, 
                 )
             )
             detected_crosswalk_bottom = False
             if self.crosswalk_bottom_active:
-                usb_camera_frame, detected_crosswalk_bottom, time_ = (
+                usb_camera_frame, detected_crosswalk_bottom = (
                     self.crosswalk_roi_top.detect(
                         usb_camera_frame,
                     )
