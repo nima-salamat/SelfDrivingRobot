@@ -3,7 +3,7 @@ import time
 from camera import UsbCamera
 from config import FRAME_DELAY, DEBUG, TRY_EXCEPT
 from lane_detection import LaneDetector
-from crosswalk_detection import CrosswalkDetector
+from crosswalk_detection_v2 import CrosswalkDetector
 from apriltag_detection import ApriltagDetector
 from cross_intersection import IntersectionNavigator
 import serial_connector
