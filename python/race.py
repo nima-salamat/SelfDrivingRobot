@@ -32,14 +32,13 @@ class Robot:
         self.usb_camera = UsbCamera(0)
 
         # Initialize lane detector
-        self.lane_detector = LaneDetector(self.usb_camera, self.ser, debug=False)
+        self.lane_detector = LaneDetector(self.usb_camera, self.ser, debug=self.debug)
 
         # Set up the ultrasonic sensor via gpiozero with pigpio backend.
         factory = PiGPIOFactory()
         self.ultrasonic = DistanceSensor(echo=17, trigger=4, pin_factory=factory)
         self.min_dist = 0.3
 
-        # Latest ultrasonic distance value
         self.ultrasonic_distance = 1.0
 
         # Start the ultrasonic update thread
@@ -72,11 +71,11 @@ class Robot:
         """Main control loop for the robot."""
         while True:
             ret, usb_camera_frame = self.usb_camera.cap.read()
-            if not ret:
+            if not ret: 
                 print("Failed to capture frame from camera")
                 break
 
-            # Check ultrasonic distance and react accordingly.
+            #Check ultrasonic distance and react accordingly.
             if self.min_dist <= self.ultrasonic_distance <= self.min_dist + 0.05:
                 self.ser.send("center 0")
                 time.sleep(0.5)

@@ -1,10 +1,12 @@
+# config
+
 import numpy as np
 
 # ---------------- Adjustable Parameters ----------------
 # ROI parameters (fractions of frame size)
-ROI_Y_START_FRAC = 0.6  # Top of ROI (bottom 35% of frame)
-ROI_X_START_FRAC = 0.3  # Left edge for lane detection
-ROI_X_END_FRAC = 0.74  # Right edge for lane detection
+ROI_Y_START_FRAC = 0.1  # Top of ROI (bottom 35% of frame)
+ROI_X_START_FRAC = 0.5  # Left edge for lane detection
+ROI_X_END_FRAC = 1  # Right edge for lane detection
 ROI_WIDTH_FRAC = ROI_X_END_FRAC - ROI_X_START_FRAC
 
 # Slope thresholds for lane lines
@@ -19,7 +21,7 @@ HOUGH_MAX_LINE_GAP = 10
 
 # Canny edge detection thresholds
 CANNY_LOW = 50
-CANNY_HIGH = 150
+CANNY_HIGH = 200
 
 # Gaussian blur kernel size (must be odd)
 BLUR_KERNEL = 5
