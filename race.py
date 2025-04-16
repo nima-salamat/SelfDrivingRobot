@@ -12,6 +12,7 @@ from gpiozero.pins.pigpio import PiGPIOFactory
 
 
 
+a=4
 class Robot:
     def __init__(self, args):
         # Check debug value
