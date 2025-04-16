@@ -48,18 +48,7 @@ class Robot:
         self.intersection_navigator = IntersectionNavigator(self.ser)
         self.tolerance = 2
 
-        width, height = self.usb_camera.width, self.usb_camera.height
-        self.crosswalk_roi_top = [
-            [height // 2, height],
-            [0, width],
-        ]
-        self.crosswalk_roi_bottom = [
-            [0, height // 2],
-            [0, width],
-        ]
-        self.crosswalk_bottom_active = False
-        self.crosswalk_top = CrosswalkDetector()
-        self.crosswalk_bottom = CrosswalkDetector()
+        self.crosswalk_detector = CrosswalkDetector()
 
         if "no-stop" in args:
             self.running = False
@@ -88,38 +77,32 @@ class Robot:
                 continue
 
             # Detect crosswalk in bottom half (misnamed as crosswalk_roi_top)
-            detected_crosswalk_top = self.crosswalk_top.detect(
-                usb_camera_frame, self.crosswalk_roi_top
+            detected_crosswalk = self.crosswalk_detector.detect(
+                usb_camera_frame, self.crosswalk_roi
             )
 
-            # Detect in top half if activated
-            detected_crosswalk_bottom = False
-            if self.crosswalk_bottom_active:
-                detected_crosswalk_bottom = self.crosswalk_bottom.detect(
-                    usb_camera_frame, self.crosswalk_roi_bottom
-                )
+          
 
-            if detected_crosswalk_top or self.crosswalk_bottom_active:
-                self.crosswalk_bottom_active = True
+            if detected_crosswalk:
                 ret, pi_camera_frame = self.pi_camera.cap.read()
-                label = self.apriltag_detector.detect(pi_camera_frame)
-                if label != "no sign":
-                    print(f"AprilTag detected: {label}")
-                    self.last_apriltag = (label, time.time())
-                if detected_crosswalk_bottom:
-                    self.ser.send("center 0")
-                    time.sleep(3)
+                label = "no sign"
+                while label == "no sign":
+                    label = self.apriltag_detector.detect(pi_camera_frame)
+                    if label != "no sign":
+                        print(f"AprilTag detected: {label}")
+                        self.last_apriltag = (label, time.time())
+                    
 
-                    self.intersection_navigator.navigate_by_tag(label)
-                    continue
-                if self.debug:
-                    cv2.imshow("pi", pi_camera_frame)
+
+                self.intersection_navigator.navigate_by_tag(label)
+                continue
+              
 
             # Lane detection or default command
-            if not self.crosswalk_bottom_active:
+            if not detected_crosswalk:
                 usb_camera_frame = self.lane_detector.detect(usb_camera_frame)
             else:
-                self.ser.send("center 130")
+                self.ser.send("center 0")
 
             # Show the frame with detections if debug is on
             if self.debug:
