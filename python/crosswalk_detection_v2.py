@@ -1,12 +1,10 @@
 import cv2
 
 
-
 class CrosswalkDetector:
-   
     def detect(self, frame, roi):
-        frame = frame[roi[0][0]:roi[0][1],roi[1][0]:roi[1][1]]
-         # تبدیل به Grayscale
+        frame = frame[roi[0][0] : roi[0][1], roi[1][0] : roi[1][1]]
+        # تبدیل به Grayscale
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         # اعمال Gaussian Blur برای کاهش نویز
@@ -29,6 +27,6 @@ class CrosswalkDetector:
         # رسم خطوط سفید ضخیم
         for cnt in contours:
             x, y, w, h = cv2.boundingRect(cnt)
-            if w > 50 and h > 15:  # فیلتر بر اساس اندازه
+            if w > 50 and h > 40:  # فیلتر بر اساس اندازه
                 return True
         return False
