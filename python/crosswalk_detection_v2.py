@@ -6,8 +6,7 @@ import math
 
 class CrosswalkDetector:
     def preprocess_frame(self, frame, roi):
-        x, y, w, h = roi
-        cropped = frame[y : y + h, x : x + w]
+        cropped = frame[roi[0][0] : roi[0][1], roi[1][0] : roi[1][1]]
         gray = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
         blur = cv2.GaussianBlur(gray, (BLUR_KERNEL, BLUR_KERNEL), 0)
         return cropped, blur
@@ -17,7 +16,7 @@ class CrosswalkDetector:
 
     def detect_lines(self, edges):
         return cv2.HoughLinesP(
-            edges, 1, np.pi / 180, 50, minLineLength=15, maxLineGap=100
+            edges, 1, np.pi / 180, 50, minLineLength=40, maxLineGap=100
         )
 
     def filter_lines_by_angle(self, lines):
@@ -37,7 +36,6 @@ class CrosswalkDetector:
         return len(horizontal_lines) >= 1
 
     def detect(self, frame, roi):
-        x, y, w, h = roi
         cropped, mask = self.preprocess_frame(frame, roi)
         edges = self.detect_edges(mask)
         lines = self.detect_lines(edges)
