@@ -107,6 +107,7 @@ class Robot:
                     print(f"AprilTag detected: {label}")
                     self.last_apriltag = (label, time.time())
                 if detected_crosswalk_bottom:
+                    self.ser.send("center 0")
                     time.sleep(3)
 
                     self.intersection_navigator.navigate_by_tag(label)
