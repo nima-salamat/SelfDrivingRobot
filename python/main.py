@@ -127,3 +127,7 @@ class Robot:
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
             time.sleep(FRAME_DELAY)
+
+
+if __name__ == "__main__":
+    Robot().loop()
