@@ -67,9 +67,7 @@ class Robot:
     def loop(self):
         while True:
             if self.running:
-                # camera read
                 ret, pi_camera_frame = self.pi_camera.cap.read()
-
                 label = self.apriltag_detector.detect(pi_camera_frame)
                 if label == "stop":
                     self.stop_seen = True
@@ -80,76 +78,50 @@ class Robot:
                     and time.time() - self.last_time_seen > 1
                 ):
                     self.running = False
-
                 self.ser.send("center 0")
                 continue
 
-            # camera read
+            # Read USB camera frame
             ret, usb_camera_frame = self.usb_camera.cap.read()
-            # crosswalk
+            if not ret:
+                print("Failed to read USB camera frame")
+                continue
+
+            # Detect crosswalk in bottom half (misnamed as crosswalk_roi_top)
             detected_crosswalk_top = self.crosswalk_top.detect(
                 usb_camera_frame, self.crosswalk_roi_top
             )
 
+            # Detect in top half if activated
             detected_crosswalk_bottom = False
             if self.crosswalk_bottom_active:
-                detected_crosswalk_bottom = self.crosswalk_top.detect(
+                detected_crosswalk_bottom = self.crosswalk_bottom.detect(
                     usb_camera_frame, self.crosswalk_roi_bottom
                 )
 
             if detected_crosswalk_top or self.crosswalk_bottom_active:
                 self.crosswalk_bottom_active = True
                 ret, pi_camera_frame = self.pi_camera.cap.read()
-
-                # apriltag
                 label = self.apriltag_detector.detect(pi_camera_frame)
-                print(label) if label != "no sign" else None
-
                 if label != "no sign":
+                    print(f"AprilTag detected: {label}")
                     self.last_apriltag = (label, time.time())
-
                 if detected_crosswalk_bottom:
                     self.intersection_navigator.navigate_by_tag(label)
                     continue
-
                 if self.debug:
                     cv2.imshow("pi", pi_camera_frame)
 
-            # lane
+            # Lane detection or default command
             if not self.crosswalk_bottom_active:
                 usb_camera_frame = self.lane_detector.detect(usb_camera_frame)
-
             else:
                 self.ser.send("center 130")
 
+            # Show the frame with detections if debug is on
             if self.debug:
                 cv2.imshow("usb", usb_camera_frame)
 
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
             time.sleep(FRAME_DELAY)
-
-    def autorun(self):
-        if self.try_except:
-            try:
-                self.loop()
-            except Exception as e:
-                print(e)
-
-        else:
-            self.loop()
-
-        self.exit()
-
-    def exit(self):
-        self.usb_camera.cap.release()
-        self.pi_camera.cap.release()
-        cv2.destroyAllWindows()
-        self.ser.close()
-        sys.exit()
-
-
-if __name__ == "__main__":
-    robot = Robot(sys.argv)
-    robot.autorun()
-    print("Program terminated.")
