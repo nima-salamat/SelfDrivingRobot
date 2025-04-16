@@ -130,4 +130,4 @@ class Robot:
 
 
 if __name__ == "__main__":
-    Robot().loop()
+    Robot(sys.argv).loop()
