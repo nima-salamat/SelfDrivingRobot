@@ -46,7 +46,7 @@ class Robot:
         self.crosswalk_detector = CrosswalkDetector()
         width, height = self.usb_camera.width, self.usb_camera.height
         # تصحیح ROI برای هدف‌گیری نیمه پایینی
-        self.crosswalk_roi = [[height // 2, height], [width // 5, width - width // 5]]
+        self.crosswalk_roi = [[0, height], [width // 5, width - width // 5]]
         if "no-stop" in args:
             self.running = False
 

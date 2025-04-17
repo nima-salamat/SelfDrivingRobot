@@ -6,8 +6,8 @@ class IntersectionNavigator:
         self.ser = ser
         self.forward_speed = 150
         self.turn_speed = 150
-        self.angle_right = ANGLE_SHARP_RIGHT
-        self.angle_left = ANGLE_SHARP_LEFT
+        self.angle_right = 160
+        self.angle_left = 0
         self.angle_center = ANGLE_CENTER
     
     @property
@@ -30,20 +30,22 @@ class IntersectionNavigator:
         self.go_forward
         time.sleep(2)
         self.go_left
-        time.sleep(1)    
+        time.sleep(0)    
         self.go_forward
         time.sleep(0.5)
         self.stop
-        
+        time.sleep(1)
+
     def turn_right(self):
         self.go_forward
-        time.sleep(1)
+        time.sleep(0.3)
         self.go_right
-        time.sleep(1.5)
+        time.sleep(2)
         self.go_forward
-        time.sleep(0.5)
+        time.sleep(0.1)
         self.stop
-        
+        time.sleep(1)
+
     def forward(self):
         self.go_forward
         time.sleep(3)
