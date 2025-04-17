@@ -86,14 +86,13 @@ class Robot:
 
             if detected_crosswalk:
                 
-                time1 = time.time()
                 self.ser.send("center 0")
                 self.ser.send("center 130")
                 time.sleep(0.5)
                 self.ser.send("center 0")
 
                 print("crosswalk stoped")
-                while time1 + 3 > time.time(): 
+                for i in range(6):
                     
                     label = "no sign"
                     ret, pi_camera_frame = self.pi_camera.cap.read()
@@ -101,7 +100,7 @@ class Robot:
                     if label != "no sign":
                         print(f"AprilTag detected: {label}")
                         self.last_apriltag = (label, time.time())
-                        
+                    time.sleep(0.5)
                 
                 if self.last_apriltag[0] is None:
                     print("could not find apriltag")
