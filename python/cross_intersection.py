@@ -4,8 +4,8 @@ from config import MODE, ANGLE_CENTER, ANGLE_SHARP_RIGHT, ANGLE_SHARP_LEFT
 class IntersectionNavigator:
     def __init__(self, ser):
         self.ser = ser
-        self.forward_speed = MODE.default.forward
-        self.turn_speed = MODE.default.turn
+        self.forward_speed = 150
+        self.turn_speed = 150
         self.angle_right = ANGLE_SHARP_RIGHT
         self.angle_left = ANGLE_SHARP_LEFT
         self.angle_center = ANGLE_CENTER
