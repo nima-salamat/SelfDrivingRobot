@@ -88,7 +88,7 @@ class Robot:
                 
                 time1 = time.time()
                 print("crosswalk stoped")
-                while time1 + 3 < time.time(): 
+                while time1 + 3 > time.time(): 
                     self.ser.send("center 0")
                     label = "no sign"
                     ret, pi_camera_frame = self.pi_camera.cap.read()

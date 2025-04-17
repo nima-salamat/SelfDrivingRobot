@@ -6,8 +6,6 @@ import time
 
 
 class CrosswalkDetector:
-    
-
     def preprocess_frame(self, frame, roi):
         cropped = frame[roi[0][0] : roi[0][1], roi[1][0] : roi[1][1]]
 
@@ -30,7 +28,7 @@ class CrosswalkDetector:
                 x1, y1, x2, y2 = line[0]
                 angle = np.degrees(np.arctan2(y2 - y1, x2 - x1))
                 if abs(angle) < 25:
-                    if (y1 + y2) / 2 < 80:
+                    if (y1 + y2) / 2 < 90:
                         horizontal_lines.append((x1, y1, x2, y2))
                 elif abs(abs(angle) - 90) < 20:
                     vertical_lines.append((x1, y1, x2, y2))
@@ -49,7 +47,5 @@ class CrosswalkDetector:
 
         # Update detection history
         current_detection = self.is_crosswalk(horizontal_lines, vertical_lines)
-
-        
 
         return current_detection
