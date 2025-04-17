@@ -78,31 +78,6 @@ class CrosswalkDetector:
             if self.no_detection_count >= self.no_detection_threshold:
                 self.crosswalk_sent = False
 
-        # Draw only if debug is enabled
-        if self.debug:
-            # ROI box
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
-
-            # Horizontal lines - green
-            for lx1, ly1, lx2, ly2 in horizontal_lines:
-                cv2.line(frame, (x + lx1, y + ly1), (x + lx2, y + ly2), (0, 255, 0), 2)
-
-            # Vertical lines - blue
-            for vx1, vy1, vx2, vy2 in vertical_lines:
-                cv2.line(frame, (x + vx1, y + vy1), (x + vx2, y + vy2), (255, 0, 0), 2)
-
-            # Status text
-            status_text = (
-                "Crosswalk Detected" if confirmed_detection else "No Crosswalk"
-            )
-            cv2.putText(
-                frame,
-                status_text,
-                (50, 120),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                1,
-                (0, 255, 255),
-                2,
-            )
+       
 
         return confirmed_detection
