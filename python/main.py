@@ -86,19 +86,26 @@ class Robot:
 
             if detected_crosswalk:
                 
-                self.ser.send("center 0")
-                print("crosswalk stoped")
-                label = "no sign"
-                while label == "no sign":
+                time1 = time.time()
+                while time1 +3 < time.time(): 
+                    self.ser.send("center 0")
+                    print("crosswalk stoped")
+                    label = "no sign"
+                    
                     ret, pi_camera_frame = self.pi_camera.cap.read()
                     label = self.apriltag_detector.detect(pi_camera_frame)
                     if label != "no sign":
                         print(f"AprilTag detected: {label}")
                         self.last_apriltag = (label, time.time())
-                print("apriltag finded")
-                self.intersection_navigator.navigate_by_tag(label)
-                continue
-              
+                        
+                    
+                    if self.last_apriltag[0] is None:
+                        print("could not find apriltag")
+                    elif self.last_apriltag[1] + 1 > time.time():
+                                            
+                        self.intersection_navigator.navigate_by_tag(self.last_apriltag[0])
+                        continue
+                
 
             # Lane detection or default command
             if not detected_crosswalk:
