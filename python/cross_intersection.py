@@ -28,25 +28,25 @@ class IntersectionNavigator:
 
     def turn_left(self):
         self.go_forward
-        time.sleep(0.4)
+        time.sleep(2)
         self.go_left
-        time.sleep(0.6)    
+        time.sleep(1.5)    
         self.go_forward
-        time.sleep(0.2)
+        time.sleep(0.5)
         self.stop
         
     def turn_right(self):
         self.go_forward
-        time.sleep(0.3)
+        time.sleep(1)
         self.go_right
-        time.sleep(0.4)
+        time.sleep(1.5)
         self.go_forward
-        time.sleep(0.3)
+        time.sleep(0.5)
         self.stop
         
     def forward(self):
         self.go_forward
-        time.sleep(1)
+        time.sleep(3)
     
     def navigate_by_tag(self, label):
         if label == "turn left":
