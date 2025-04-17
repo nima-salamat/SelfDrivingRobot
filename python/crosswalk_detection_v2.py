@@ -18,7 +18,7 @@ class CrosswalkDetector:
 
     def detect_lines(self, edges):
         return cv2.HoughLinesP(
-            edges, 1, np.pi / 180, 50, minLineLength=15, maxLineGap=100
+            edges, 1, np.pi / 180, 50, minLineLength=30, maxLineGap=10
         )
 
     def filter_lines_by_angle(self, lines):
