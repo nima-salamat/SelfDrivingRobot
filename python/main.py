@@ -29,7 +29,7 @@ class Robot:
         self.ser = serial_connector.connect()
 
         # Cameras
-        self.usb_camera = UsbCamera(1)
+        self.usb_camera = UsbCamera(0)
         self.pi_camera = UsbCamera(2)  # PiCamera()
 
         # Detectors
