@@ -46,14 +46,16 @@ class CrosswalkDetector:
                 x1, y1, x2, y2 = line[0]
                 angle = np.degrees(np.arctan2(y2 - y1, x2 - x1))
                 if abs(angle) < 25:
-                    horizontal_lines.append((x1, y1, x2, y2))
+                    if (y1 + y2) / 2 < 100:
+                        horizontal_lines.append((x1, y1, x2, y2))
                 elif abs(abs(angle) - 90) < 20:
-                    if (y1+y2)/2 > 100:
-                        vertical_lines.append((x1, y1, x2, y2))
+                    vertical_lines.append((x1, y1, x2, y2))
         return horizontal_lines, vertical_lines
 
     def is_crosswalk(self, horizontal_lines, vertical_lines, min_horiz=2, min_vert=2):
-        return (len(horizontal_lines) >= min_horiz) and (len(vertical_lines) >= min_vert)
+        return (len(horizontal_lines) >= min_horiz) and (
+            len(vertical_lines) >= min_vert
+        )
 
     def detect(self, frame, roi):
         cropped, mask = self.preprocess_frame(frame, roi)
@@ -78,7 +80,5 @@ class CrosswalkDetector:
             self.no_detection_count += 1
             if self.no_detection_count >= self.no_detection_threshold:
                 self.crosswalk_sent = False
-
-       
 
         return confirmed_detection
