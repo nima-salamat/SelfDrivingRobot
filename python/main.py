@@ -82,6 +82,8 @@ class Robot:
                 and current_time > self.last_crosswalk_time + self.crosswalk_cooldown
                 and not self.last_crosswalk
             ):
+                self.last_crosswalk = not self.last_crosswalk
+
                 self.last_crosswalk_time = current_time
                 self.ser.send("sharp right 130")
                 time.sleep(0.5)
@@ -90,8 +92,7 @@ class Robot:
                 print("crosswalk stopped")
                 # بهبود حلقه بررسی AprilTag
                 start_time = time.time()
-                while time.time() - start_time < 3 :
-                    self.last_crosswalk = not self.last_crosswalk
+                while time.time() - start_time < 3:
                     ret, pi_camera_frame = self.pi_camera.cap.read()
                     if ret:
                         label = self.apriltag_detector.detect(pi_camera_frame)
