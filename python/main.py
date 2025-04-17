@@ -49,21 +49,20 @@ class Robot:
         self.crosswalk_roi = [[0, height], [width // 5, width - width // 5]]
         if "no-stop" in args:
             self.running = False
-
+        self.last_crosswalk = False
         # مدیریت حالت برای جلوگیری از توقف مکرر
         self.last_crosswalk_time = 0
         self.crosswalk_cooldown = 5  # زمان خنک‌سازی 5 ثانیه
 
     def loop(self):
         while True:
-           
             ret, pi_camera_frame = self.pi_camera.cap.read()
             label = self.apriltag_detector.detect(pi_camera_frame)
             if label == "stop":
                 self.ser.send("center 0")
                 time.sleep(10)
                 self.last_time_seen = time.time()
-            
+
             self.ultrasonic.check_distance()
 
             # Read USB camera framea
@@ -81,6 +80,7 @@ class Robot:
             if (
                 detected_crosswalk
                 and current_time > self.last_crosswalk_time + self.crosswalk_cooldown
+                and not self.last_crosswalk
             ):
                 self.last_crosswalk_time = current_time
                 self.ser.send("sharp right 130")
@@ -88,10 +88,10 @@ class Robot:
                 self.ser.send("center 0")
                 time.sleep(1)
                 print("crosswalk stopped")
-
                 # بهبود حلقه بررسی AprilTag
                 start_time = time.time()
-                while time.time() - start_time < 3:
+                while time.time() - start_time < 3 :
+                    self.last_crosswalk = not self.last_crosswalk
                     ret, pi_camera_frame = self.pi_camera.cap.read()
                     if ret:
                         label = self.apriltag_detector.detect(pi_camera_frame)
@@ -111,6 +111,8 @@ class Robot:
                 else:
                     print("could not find apriltag or detection is too old")
 
+            if self.last_crosswalk and detected_crosswalk:
+                self.last_crosswalk = not self.last_crosswalk
             # Lane detection or default command
             if not detected_crosswalk:
                 usb_camera_frame = self.lane_detector.detect(usb_camera_frame)
