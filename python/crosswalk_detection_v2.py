@@ -25,8 +25,8 @@ class CrosswalkDetector:
         self.ser = ser
 
     def preprocess_frame(self, frame, roi):
-        x, y, w, h = roi
-        cropped = frame[y : y + h, x : x + w]
+        cropped = frame[roi[0][0] : roi[0][1], roi[1][0] : roi[1][1]]
+
         gray = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
         blur = cv2.GaussianBlur(gray, (BLUR_KERNEL, BLUR_KERNEL), 0)
         return cropped, blur
@@ -55,7 +55,6 @@ class CrosswalkDetector:
         return (len(horizontal_lines) >= min_horiz) and (len(vertical_lines) >= min_vert)
 
     def detect(self, frame, roi):
-        x, y, w, h = roi
         cropped, mask = self.preprocess_frame(frame, roi)
         edges = self.detect_edges(mask)
         lines = self.detect_lines(edges)
