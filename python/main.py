@@ -87,7 +87,7 @@ class Robot:
             if detected_crosswalk:
                 
                 self.ser.send("center 0")
-                self.ser.send("slow right 130")
+                self.ser.send("sharp right 130")
                 time.sleep(0.5)
                 self.ser.send("center 0")
 

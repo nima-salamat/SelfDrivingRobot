@@ -28,9 +28,9 @@ class IntersectionNavigator:
 
     def turn_left(self):
         self.go_forward
-        time.sleep(2)
+        time.sleep(2.7)
         self.go_left
-        time.sleep(1.5)    
+        time.sleep(1)    
         self.go_forward
         time.sleep(0.5)
         self.stop
