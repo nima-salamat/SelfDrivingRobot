@@ -87,7 +87,7 @@ class Robot:
             if detected_crosswalk:
                 
                 time1 = time.time()
-                while time1 +3 < time.time(): 
+                while time1 +3 > time.time(): 
                     self.ser.send("center 0")
                     print("crosswalk stoped")
                     label = "no sign"
@@ -101,7 +101,7 @@ class Robot:
                 
                 if self.last_apriltag[0] is None:
                     print("could not find apriltag")
-                elif self.last_apriltag[1] + 1 > time.time():
+                elif self.last_apriltag is not None and self.last_apriltag[1] + 1 > time.time():
                                         
                     self.intersection_navigator.navigate_by_tag(self.last_apriltag[0])
                     continue
