@@ -105,9 +105,9 @@ class MODE:
         """Very Slow"""
 
         forward = 110
-        turn = 100
+        turn = 110
 
-    default = Center
+    default = Snail
 
     @classmethod
     def set(cls, class_):
