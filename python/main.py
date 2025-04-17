@@ -98,13 +98,14 @@ class Robot:
                         print(f"AprilTag detected: {label}")
                         self.last_apriltag = (label, time.time())
                         
-                    
-                    if self.last_apriltag[0] is None:
-                        print("could not find apriltag")
-                    elif self.last_apriltag[1] + 1 > time.time():
-                                            
-                        self.intersection_navigator.navigate_by_tag(self.last_apriltag[0])
-                        continue
+                
+                if self.last_apriltag[0] is None:
+                    print("could not find apriltag")
+                elif self.last_apriltag[1] + 1 > time.time():
+                                        
+                    self.intersection_navigator.navigate_by_tag(self.last_apriltag[0])
+                    continue
+                
                 
 
             # Lane detection or default command
