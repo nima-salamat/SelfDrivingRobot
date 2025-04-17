@@ -35,7 +35,7 @@ class Robot:
         # except usb.core.NoBackendError:
         # Cameras
         self.usb_camera = UsbCamera(1)
-        self.pi_camera = UsbCamera(0)  # PiCamera()
+        self.pi_camera = UsbCamera(2)  # PiCamera()
 
         # Detectors
 
