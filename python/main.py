@@ -6,6 +6,7 @@ from lane_detection import LaneDetector
 from crosswalk_detection_v2 import CrosswalkDetector
 from apriltag_detection import ApriltagDetector
 from cross_intersection import IntersectionNavigator
+from ultrasonic import Ultrasonic
 import serial_connector
 import sys
 
@@ -41,6 +42,7 @@ class Robot:
         self.intersection_navigator = IntersectionNavigator(self.ser)
         self.tolerance = 2
 
+        self.ultrasonic = Ultrasonic(race=True)
         self.crosswalk_detector = CrosswalkDetector()
         width, height = self.usb_camera.width, self.usb_camera.height
         # تصحیح ROI برای هدف‌گیری نیمه پایینی
@@ -54,22 +56,17 @@ class Robot:
 
     def loop(self):
         while True:
-            if self.running:
-                ret, pi_camera_frame = self.pi_camera.cap.read()
-                label = self.apriltag_detector.detect(pi_camera_frame)
-                if label == "stop":
-                    self.stop_seen = True
-                    self.last_time_seen = time.time()
-                elif (
-                    label == "no sign"
-                    and self.stop_seen
-                    and time.time() - self.last_time_seen > 1
-                ):
-                    self.running = False
+           
+            ret, pi_camera_frame = self.pi_camera.cap.read()
+            label = self.apriltag_detector.detect(pi_camera_frame)
+            if label == "stop":
                 self.ser.send("center 0")
-                continue
+                time.sleep(10)
+                self.last_time_seen = time.time()
+            
+            self.ultrasonic.check_distance()
 
-            # Read USB camera frame
+            # Read USB camera framea
             ret, usb_camera_frame = self.usb_camera.cap.read()
             if not ret:
                 print("Failed to read USB camera frame")
