@@ -107,6 +107,7 @@ class Robot:
                     and self.last_apriltag[1] + 1 > time.time()
                 ):
                     self.intersection_navigator.navigate_by_tag(self.last_apriltag[0])
+                    continue
                 else:
                     print("could not find apriltag or detection is too old")
 
