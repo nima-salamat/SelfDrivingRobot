@@ -5,7 +5,7 @@ import numpy as np
 # ---------------- Adjustable Parameters ----------------
 # ROI parameters (fractions of frame size)
 ROI_Y_START_FRAC = 0.1  # Top of ROI (bottom 35% of frame)
-ROI_X_START_FRAC = 0.5  # Left edge for lane detection
+ROI_X_START_FRAC = 0.35  # Left edge for lane detection
 ROI_X_END_FRAC = 1  # Right edge for lane detection
 ROI_WIDTH_FRAC = ROI_X_END_FRAC - ROI_X_START_FRAC
 
@@ -47,10 +47,10 @@ ANGLE_VERY_SHARP_LEFT = 0
 HISTORY_LEN = 3
 
 # Estimated lane width in pixels (for single-lane detection)
-LANE_WIDTH_FRAC = 0.45
+LANE_WIDTH_FRAC = 0.1
 
 # Fixed center x-position for error calculation
-FIXED_CENTER = 180
+FIXED_CENTER = 240
 
 # Camera and production settings
 CAMERA_INDEX = 0
@@ -134,20 +134,19 @@ class MODE:
 # Apriltag Variables
 MIN_SIZE_APRILTAG = 10
 TAG_LABLES = {
-    0: "tunnel beginning",
-    1: "tunnel end",
-    2: "cross walk",
-    3: "parking zone",
-    4: "No-Passing Zone",
-    5: "Passing Zone",
-    6: "stop",
-    7: "priority over",
-    8: "Bared area",
-    9: "step uphill",
-    10: "step downhill",
-    11: "turn left",
-    12: "turn right",
-    13: "go straight",
+    # Standard traffic signs (you'll need to match these with your actual tag IDs)
+    0: "stop",
+    1: "turn right",
+    2: "turn left",
+    3: "go straight",
+    4: "yield",
+    5: "pedestrian crossing",
+    6: "no entry",
+    7: "speed limit 30",
+    8: "speed limit 60",
+    9: "speed limit 90",
+    10: "roundabout",
+    # Add more as needed
 }
 
 # main file variables

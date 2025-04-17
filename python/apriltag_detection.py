@@ -25,15 +25,10 @@ class ApriltagDetector:
     def detect(self, frame):
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        if USE_ADAPTIVE_THRESHOLD:
-            thresh = cv2.adaptiveThreshold(
-                gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
-            )
-        else:
-            _, thresh = cv2.threshold(gray, THRESHOLD_VALUE, 255, cv2.THRESH_BINARY)
+
 
         detections = self.detector.detect(
-            thresh, estimate_tag_pose=False
+            gray, estimate_tag_pose=False
         )  
 
         main_size = 0

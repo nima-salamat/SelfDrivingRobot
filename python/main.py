@@ -87,11 +87,10 @@ class Robot:
             if detected_crosswalk:
                 
                 time1 = time.time()
+                print("crosswalk stoped")
                 while time1 +3 > time.time(): 
                     self.ser.send("center 0")
-                    print("crosswalk stoped")
                     label = "no sign"
-                    
                     ret, pi_camera_frame = self.pi_camera.cap.read()
                     label = self.apriltag_detector.detect(pi_camera_frame)
                     if label != "no sign":
@@ -104,7 +103,7 @@ class Robot:
                 elif self.last_apriltag is not None and self.last_apriltag[1] + 1 > time.time():
                                         
                     self.intersection_navigator.navigate_by_tag(self.last_apriltag[0])
-                    continue
+                    
                 
                 
 
