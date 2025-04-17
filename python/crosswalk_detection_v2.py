@@ -49,9 +49,7 @@ class CrosswalkDetector:
 
         # Update detection history
         current_detection = self.is_crosswalk(horizontal_lines, vertical_lines)
-        self.detection_history.append(current_detection)
-        confirmed_detection = sum(self.detection_history) >= self.min_history_detections
 
         
 
-        return confirmed_detection
+        return current_detection
