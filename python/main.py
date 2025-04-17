@@ -28,17 +28,10 @@ class Robot:
         self.ser = serial_connector.connect()
 
         # Cameras
-        # try:
-        #     self.usb_camera = UsbCamera(CameraDevices.get_address(0))
-        #     # "D:/div_5/open_cv/video_2025-02-15_11-43-46.mp4"
-        #     self.pi_camera = UsbCamera(CameraDevices.get_address(1)) # PiCamera()
-        # except usb.core.NoBackendError:
-        # Cameras
         self.usb_camera = UsbCamera(1)
         self.pi_camera = UsbCamera(2)  # PiCamera()
 
         # Detectors
-
         self.lane_detector = LaneDetector(self.usb_camera, self.ser, debug=self.debug)
         self.apriltag_detector = ApriltagDetector()
         self.running = True
@@ -50,9 +43,14 @@ class Robot:
 
         self.crosswalk_detector = CrosswalkDetector()
         width, height = self.usb_camera.width, self.usb_camera.height
-        self.crosswalk_roi = [[0, height],[width//5, width - width//5]]
+        # تصحیح ROI برای هدف‌گیری نیمه پایینی
+        self.crosswalk_roi = [[height // 2, height], [width // 5, width - width // 5]]
         if "no-stop" in args:
             self.running = False
+
+        # مدیریت حالت برای جلوگیری از توقف مکرر
+        self.last_crosswalk_time = 0
+        self.crosswalk_cooldown = 5  # زمان خنک‌سازی 5 ثانیه
 
     def loop(self):
         while True:
@@ -77,39 +75,43 @@ class Robot:
                 print("Failed to read USB camera frame")
                 continue
 
-            # Detect crosswalk in bottom half (misnamed as crosswalk_roi_top)
+            # Detect crosswalk in bottom half
             detected_crosswalk = self.crosswalk_detector.detect(
                 usb_camera_frame, self.crosswalk_roi
             )
 
-          
-
-            if detected_crosswalk:
-                
+            current_time = time.time()
+            if (
+                detected_crosswalk
+                and current_time > self.last_crosswalk_time + self.crosswalk_cooldown
+            ):
+                self.last_crosswalk_time = current_time
                 self.ser.send("sharp right 130")
                 time.sleep(0.5)
                 self.ser.send("center 0")
                 time.sleep(1)
+                print("crosswalk stopped")
 
-                print("crosswalk stoped")
-                for i in range(6):
-                    
-                    label = "no sign"
+                # بهبود حلقه بررسی AprilTag
+                start_time = time.time()
+                while time.time() - start_time < 3:
                     ret, pi_camera_frame = self.pi_camera.cap.read()
-                    label = self.apriltag_detector.detect(pi_camera_frame)
-                    if label != "no sign":
-                        print(f"AprilTag detected: {label}")
-                        self.last_apriltag = (label, time.time())
-                    time.sleep(0.5)
-                
-                if self.last_apriltag[0] is None:
-                    print("could not find apriltag")
-                elif self.last_apriltag is not None and self.last_apriltag[1] + 1 > time.time():
-                                        
+                    if ret:
+                        label = self.apriltag_detector.detect(pi_camera_frame)
+                        if label != "no sign":
+                            print(f"AprilTag detected: {label}")
+                            self.last_apriltag = (label, time.time())
+                            break  # اگر AprilTag پیدا شد، حلقه را ترک کنید
+                    time.sleep(0.1)  # تأخیر کوتاه‌تر برای پردازش سریع‌تر
+
+                # تصحیح منطق ناوبری AprilTag
+                if (
+                    self.last_apriltag[0] is not None
+                    and self.last_apriltag[1] + 1 > time.time()
+                ):
                     self.intersection_navigator.navigate_by_tag(self.last_apriltag[0])
-                    
-                
-                
+                else:
+                    print("could not find apriltag or detection is too old")
 
             # Lane detection or default command
             if not detected_crosswalk:
