@@ -42,7 +42,7 @@ class Robot:
         self.intersection_navigator = IntersectionNavigator(self.ser)
         self.tolerance = 2
 
-        self.ultrasonic = Ultrasonic(race=True)
+        self.ultrasonic = Ultrasonic(race=True, ser=self.ser)
         self.crosswalk_detector = CrosswalkDetector()
         width, height = self.usb_camera.width, self.usb_camera.height
         # تصحیح ROI برای هدف‌گیری نیمه پایینی

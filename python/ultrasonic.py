@@ -5,12 +5,13 @@ import threading
 import time
 
 class Ultrasonic:
-    def __init__(self, min_dist=0.3, echo=17, trigger=4, race=False):
+    def __init__(self, min_dist=0.3, echo=17, trigger=4, race=False, ser=None):
         factory = PiGPIOFactory()
         self.ultrasonic = DistanceSensor(echo=echo, trigger=trigger, pin_factory=factory)
         self.min_dist = min_dist
         self.ultrasonic_distance = 1.0
         self.race=race
+        self.ser = ser
         self.ultrasonic_thread = threading.Thread(
             target=self._update_ultrasonic_distance, daemon=True
         )
