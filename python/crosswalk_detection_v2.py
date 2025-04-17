@@ -6,23 +6,7 @@ import time
 
 
 class CrosswalkDetector:
-    def __init__(
-        self,
-        no_detection_threshold=1,
-        history_length=15,
-        min_history_detections=5,
-        debug=False,
-        ser=None,
-    ):
-        self.crosswalk_sent = False
-        self.no_detection_count = 0
-        self.no_detection_threshold = no_detection_threshold
-        self.history_length = history_length
-        self.min_history_detections = min_history_detections
-        self.detection_history = deque(maxlen=history_length)
-        self.debug = debug  # If True, draw lines, text, etc.
-        self.time_ = None
-        self.ser = ser
+    
 
     def preprocess_frame(self, frame, roi):
         cropped = frame[roi[0][0] : roi[0][1], roi[1][0] : roi[1][1]]
@@ -68,17 +52,6 @@ class CrosswalkDetector:
         self.detection_history.append(current_detection)
         confirmed_detection = sum(self.detection_history) >= self.min_history_detections
 
-        # Message handling
-        if confirmed_detection:
-            if not self.crosswalk_sent:
-                self.time_ = time.time()
-                # ser.send("crosswalk")
-                print("crosswalk")
-                self.crosswalk_sent = True
-            self.no_detection_count = 0
-        else:
-            self.no_detection_count += 1
-            if self.no_detection_count >= self.no_detection_threshold:
-                self.crosswalk_sent = False
+        
 
         return confirmed_detection

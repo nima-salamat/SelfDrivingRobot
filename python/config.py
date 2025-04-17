@@ -4,7 +4,7 @@ import numpy as np
 
 # ---------------- Adjustable Parameters ----------------
 # ROI parameters (fractions of frame size)
-ROI_Y_START_FRAC = 0.1  # Top of ROI (bottom 35% of frame)
+ROI_Y_START_FRAC = 0.4  # Top of ROI (bottom 35% of frame)
 ROI_X_START_FRAC = 0.35  # Left edge for lane detection
 ROI_X_END_FRAC = 1  # Right edge for lane detection
 ROI_WIDTH_FRAC = ROI_X_END_FRAC - ROI_X_START_FRAC
