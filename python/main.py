@@ -90,6 +90,8 @@ class Robot:
                 self.ser.send("center 0")
                 self.ser.send("center 130")
                 time.sleep(0.5)
+                self.ser.send("center 0")
+
                 print("crosswalk stoped")
                 while time1 + 3 > time.time(): 
                     
