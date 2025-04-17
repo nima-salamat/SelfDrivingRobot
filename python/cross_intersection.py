@@ -52,7 +52,7 @@ class IntersectionNavigator:
         self.go_forward
         time.sleep(0.3)
         self.go_right
-        time.sleep(0.5)
+        time.sleep(0.7)
         self.go_forward
         time.sleep(0.1)
         self.stop
