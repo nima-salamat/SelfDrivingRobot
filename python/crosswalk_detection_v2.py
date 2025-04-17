@@ -11,7 +11,9 @@ class CrosswalkDetector:
 
         gray = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
         blur = cv2.GaussianBlur(gray, (BLUR_KERNEL, BLUR_KERNEL), 0)
-        return cropped, blur
+        _, white_lines = cv2.threshold(blur, 200, 255, cv2.THRESH_BINARY)
+
+        return cropped, white_lines
 
     def detect_edges(self, mask):
         return cv2.Canny(mask, 50, 255)
