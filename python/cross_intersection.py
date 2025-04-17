@@ -8,7 +8,7 @@ class IntersectionNavigator:
         self.turn_speed = 150
         self.angle_right = 160
         self.angle_left = 0
-        self.angle_center = ANGLE_CENTER
+        self.angle_center = 100
     
     @property
     def go_forward(self):
