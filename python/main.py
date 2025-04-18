@@ -45,15 +45,16 @@ class Robot:
         self.ultrasonic = Ultrasonic(race=True, ser=self.ser)
         self.crosswalk_detector = CrosswalkDetector()
         width, height = self.usb_camera.width, self.usb_camera.height
-        # تصحیح ROI برای هدف‌گیری نیمه پایینی
+
         self.crosswalk_roi = [[0, height], [width // 5, width - width // 5]]
         if "no-stop" in args:
             self.running = False
         self.last_crosswalk = False
-        # مدیریت حالت برای جلوگیری از توقف مکرر
-        self.last_crosswalk_time = 0
-        self.crosswalk_cooldown = 5  # زمان خنک‌سازی 5 ثانیه
 
+
+        self.last_crosswalk_time = 0
+        self.crosswalk_cooldown = 5  
+        
     def loop(self):
         while True:
             ret, pi_camera_frame = self.pi_camera.cap.read()
@@ -92,17 +93,16 @@ class Robot:
                 print("crosswalk stopped")
                 # بهبود حلقه بررسی AprilTag
                 start_time = time.time()
-                while time.time() - start_time < 3:
+                while time.time() - start_time < 2.7:
                     ret, pi_camera_frame = self.pi_camera.cap.read()
                     if ret:
                         label = self.apriltag_detector.detect(pi_camera_frame)
                         if label != "no sign":
                             print(f"AprilTag detected: {label}")
                             self.last_apriltag = (label, time.time())
-                            break  # اگر AprilTag پیدا شد، حلقه را ترک کنید
-                    time.sleep(0.1)  # تأخیر کوتاه‌تر برای پردازش سریع‌تر
+                            break  
+                    time.sleep(0.1)  
 
-                # تصحیح منطق ناوبری AprilTag
                 if (
                     self.last_apriltag[0] is not None
                     and self.last_apriltag[1] + 1 > time.time()

@@ -1,8 +1,6 @@
 import cv2
 import numpy as np
-from collections import deque
 from config import BLUR_KERNEL
-import time
 
 
 class CrosswalkDetector:
@@ -47,7 +45,6 @@ class CrosswalkDetector:
         lines = self.detect_lines(edges)
         horizontal_lines, vertical_lines = self.filter_lines_by_angle(lines)
 
-        # Update detection history
         current_detection = self.is_crosswalk(horizontal_lines, vertical_lines)
 
         return current_detection
