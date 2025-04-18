@@ -30,7 +30,7 @@ class Robot:
 
         # Cameras
         self.usb_camera = UsbCamera(0)
-        self.pi_camera = UsbCamera(2)  # PiCamera()
+        self.second_camera = UsbCamera(2)  # PiCamera()
 
         # Detectors
         self.lane_detector = LaneDetector(self.usb_camera, self.ser, debug=self.debug)
@@ -49,16 +49,48 @@ class Robot:
         self.crosswalk_roi = [[0, height], [width // 5, width - width // 5]]
         if "no-stop" in args:
             self.running = False
-        self.last_crosswalk = False
-
 
         self.last_crosswalk_time = 0
-        self.crosswalk_cooldown = 5  
-        
+        self.crosswalk_cooldown = 5
+
+    def cross_walk_handler(self):
+        current_time = time.time()
+
+        if current_time > self.last_crosswalk_time + self.crosswalk_cooldown:
+            self.last_crosswalk_time = current_time
+            self.ser.send("sharp right 130")
+            time.sleep(0.5)
+            self.ser.send("center 0")
+            time.sleep(1)
+            print("crosswalk stopped")
+            start_time = time.time()
+            while time.time() - start_time < 2.7:
+                ret, second_camera_frame = self.second_camera.cap.read()
+                if ret:
+                    label = self.apriltag_detector.detect(second_camera_frame)
+                    if label != "no sign":
+                        print(f"AprilTag detected: {label}")
+                        self.last_apriltag = (label, time.time())
+                        break
+                time.sleep(0.1)
+
+            if (
+                self.last_apriltag[0] is not None
+                and self.last_apriltag[1] + 1 > time.time()
+            ):
+                self.intersection_navigator.navigate_by_tag(self.last_apriltag[0])
+            else:
+                print("could not find apriltag or detection is too old")
+
+    def lane_detection_handler(self, usb_camera_frame, detected_crosswalk):
+        if not detected_crosswalk:
+            usb_camera_frame = self.lane_detector.detect(usb_camera_frame)
+
     def loop(self):
         while True:
-            ret, pi_camera_frame = self.pi_camera.cap.read()
-            label = self.apriltag_detector.detect(pi_camera_frame)
+            # Read
+            ret, second_camera_frame = self.second_camera.cap.read()
+            label = self.apriltag_detector.detect(second_camera_frame)
             if label == "stop":
                 self.ser.send("center 0")
                 time.sleep(10)
@@ -77,48 +109,11 @@ class Robot:
                 usb_camera_frame, self.crosswalk_roi
             )
 
-            current_time = time.time()
-            if (
-                detected_crosswalk
-                and current_time > self.last_crosswalk_time + self.crosswalk_cooldown
-                and not self.last_crosswalk
-            ):
-                self.last_crosswalk = not self.last_crosswalk
+            if detected_crosswalk:
+                self.cross_walk_handler()
 
-                self.last_crosswalk_time = current_time
-                self.ser.send("sharp right 130")
-                time.sleep(0.5)
-                self.ser.send("center 0")
-                time.sleep(1)
-                print("crosswalk stopped")
-                # بهبود حلقه بررسی AprilTag
-                start_time = time.time()
-                while time.time() - start_time < 2.7:
-                    ret, pi_camera_frame = self.pi_camera.cap.read()
-                    if ret:
-                        label = self.apriltag_detector.detect(pi_camera_frame)
-                        if label != "no sign":
-                            print(f"AprilTag detected: {label}")
-                            self.last_apriltag = (label, time.time())
-                            break  
-                    time.sleep(0.1)  
-
-                if (
-                    self.last_apriltag[0] is not None
-                    and self.last_apriltag[1] + 1 > time.time()
-                ):
-                    self.intersection_navigator.navigate_by_tag(self.last_apriltag[0])
-                    continue
-                else:
-                    print("could not find apriltag or detection is too old")
-
-            if self.last_crosswalk and detected_crosswalk:
-                self.last_crosswalk = not self.last_crosswalk
             # Lane detection or default command
-            if not detected_crosswalk:
-                usb_camera_frame = self.lane_detector.detect(usb_camera_frame)
-            else:
-                self.ser.send("center 0")
+            self.lane_detection_handler(usb_camera_frame, detected_crosswalk)
 
             # Show the frame with detections if debug is on
             if self.debug:
