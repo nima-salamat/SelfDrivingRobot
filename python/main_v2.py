@@ -1,13 +1,13 @@
 import cv2
 import time
-from camera import UsbCamera
+from modules.camera import UsbCamera
 from config import FRAME_DELAY, DEBUG, TRY_EXCEPT
-from lane_detection import LaneDetector
-from crosswalk_detection_v2 import CrosswalkDetector
-from apriltag_detection import ApriltagDetector
-from cross_intersection import IntersectionNavigator
-from ultrasonic import Ultrasonic
-import serial_connector
+from modules.lane_detection import LaneDetector
+from modules.crosswalk_detection_v2 import CrosswalkDetector
+from modules.apriltag_detection import ApriltagDetector
+from modules.cross_intersection import IntersectionNavigator
+from modules.ultrasonic import Ultrasonic
+from modules import serial_connector
 import sys
 
 
