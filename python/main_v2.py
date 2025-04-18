@@ -1,6 +1,6 @@
 import cv2
 import time
-from modules.camera import UsbCamera
+from modules.camera import UsbCamera, ThreadedCamera
 from config import FRAME_DELAY, DEBUG, TRY_EXCEPT
 from modules.lane_detection import LaneDetector
 from modules.crosswalk_detection_v2 import CrosswalkDetector
@@ -29,8 +29,8 @@ class Robot:
         self.ser = serial_connector.connect()
 
         # Cameras
-        self.usb_camera = UsbCamera(0)
-        self.second_camera = UsbCamera(2)  # PiCamera()
+        self.usb_camera = ThreadedCamera(0)
+        self.second_camera = ThreadedCamera(2)  # PiCamera()
 
         # Detectors
         self.lane_detector = LaneDetector(self.usb_camera, self.ser, debug=self.debug)
@@ -65,7 +65,7 @@ class Robot:
             print("crosswalk stopped")
             start_time = time.time()
             while time.time() - start_time < 2.7:
-                ret, second_camera_frame = self.second_camera.cap.read()
+                ret, second_camera_frame = self.second_camera.read()
                 if ret:
                     label = self.apriltag_detector.detect(second_camera_frame)
                     if label != "no sign":
@@ -89,7 +89,7 @@ class Robot:
     def loop(self):
         while True:
             # Read
-            ret, second_camera_frame = self.second_camera.cap.read()
+            ret, second_camera_frame = self.second_camera.read()
             label = self.apriltag_detector.detect(second_camera_frame)
             if label == "stop":
                 self.ser.send("center 0")
@@ -99,7 +99,7 @@ class Robot:
             self.ultrasonic.check_distance()
 
             # Read USB camera framea
-            ret, usb_camera_frame = self.usb_camera.cap.read()
+            ret, usb_camera_frame = self.usb_camera.read()
             if not ret:
                 print("Failed to read USB camera frame")
                 continue

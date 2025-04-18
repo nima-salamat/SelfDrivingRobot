@@ -6,13 +6,15 @@ except Exception:
 import time
 import usb.core
 import usb.util
+import threading
 from config import (TARGET_FPS,
                     ROI_Y_START_FRAC,
                     ROI_X_START_FRAC,
                     ROI_X_END_FRAC,
                     LANE_WIDTH_FRAC,
                     CAMERA_WIDTH,
-                    CAMERA_HEIGHT
+                    CAMERA_HEIGHT, 
+                    FRAME_DELAY
                     )
 
 
@@ -69,6 +71,7 @@ class UsbCamera(Camera):
         self.ROI_WIDTH = self.ROI_X_END - self.ROI_X_START
         self.LANE_WIDTH = int(self.width * LANE_WIDTH_FRAC)
         
+        
     def read(self):
         ret, frame = self.cap.read()
         if not ret:
@@ -76,25 +79,9 @@ class UsbCamera(Camera):
         roi = frame[self.ROI_Y_START:self.ROI_Y_END, self.ROI_X_START:self.ROI_X_END]
         return ret, roi
     
+
 class PiCamera:
-    class cap_:
-        def __init__(self, picam):
-            self.picam = picam
-            self.is_open = False
-            
-        def read(self):
-            try:
-                frame = self.picam.capture_array()
-                frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-                return True, frame_bgr
-            except Exception as e:
-                print(f"Error capturing frame: {e}")
-                return False, None
-            
-        def release(self):
-            if self.is_open:
-                self.picam.stop()
-                self.is_open = False
+    
     def __init__(self):
        # Initialize the camera
         picam2 = Picamera2()
@@ -148,4 +135,26 @@ class CameraDevices:
         device_name = cls.camera_name_index[index]
         cls.find_device_by_name(device_name)
         return cls.camera_devices.get(device_name)
-    
+
+
+
+
+class ThreadedCamera:
+    def __init__(self, src=0):
+        self.cap = cv2.VideoCapture(src)
+        self.ret, self.frame = self.cap.read()
+        self.stopped = False
+        threading.Thread(target=self._update, daemon=True).start()
+
+    def _update(self):
+        while not self.stopped:
+            self.ret, self.frame = self.cap.read()
+            time.sleep(FRAME_DELAY)
+
+    def read(self):
+        return self.ret, self.frame
+
+    def stop(self):
+        self.stopped = True
+
+
