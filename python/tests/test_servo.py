@@ -1,4 +1,4 @@
-from ..serial_connector import connect
+from ..modules.serial_connector import connect
 
 arduino = connect()
 angle = 12

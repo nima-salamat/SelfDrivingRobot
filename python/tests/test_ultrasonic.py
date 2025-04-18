@@ -1,4 +1,4 @@
-from ..ultrasonic import Ultrasonic
+from ..modules.ultrasonic import Ultrasonic
 
 ultrasonic = Ultrasonic()
 

@@ -1,4 +1,4 @@
-from ..camera import UsbCamera
+from ..modules.camera import UsbCamera
 from ..config import FRAME_DELAY
 import time
 import cv2

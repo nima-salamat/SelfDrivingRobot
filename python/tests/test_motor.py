@@ -1,4 +1,4 @@
-from ..serial_connector import connect
+from ..modules.serial_connector import connect
 from ..config import ANGLE_CENTER
 arduino = connect()
 speed = 200
