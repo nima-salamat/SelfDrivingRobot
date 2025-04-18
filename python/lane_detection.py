@@ -53,7 +53,7 @@ class LaneDetector:
         return points
   
     
-    def detect(self, frame):
+    def detect(self, frame, roi_= []):
         # Preprocess image
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         blur = cv2.GaussianBlur(gray, (BLUR_KERNEL, BLUR_KERNEL), 0)
@@ -61,10 +61,17 @@ class LaneDetector:
         edges = cv2.Canny(white_lines, CANNY_LOW, CANNY_HIGH)
     
         # Apply ROI extraction to edges
-        roi = edges[
-            self.camera.ROI_Y_START : self.camera.ROI_Y_END,
-            self.camera.ROI_X_START : self.camera.ROI_X_END,
-        ]
+        if not roi:
+            roi = edges[
+                self.camera.ROI_Y_START : self.camera.ROI_Y_END,
+                self.camera.ROI_X_START : self.camera.ROI_X_END,
+            ]
+        else:
+            roi = edges[
+                roi_[0][0] : roi_[0][1],
+                roi[1][0] : roi_[1][1],
+            ]
+            
     
         # Detect lines using Hough Transform
         lines = cv2.HoughLinesP(
@@ -173,10 +180,15 @@ class LaneDetector:
         elif x_right is not None:
             lane_center = x_right - self.camera.LANE_WIDTH / 2
         else:
-            lane_center = self.previous_lane_center
-            full_command = f"command {ANGLE_MID_RIGHT} 120"
-            self.ser.send(full_command)
-            return frame
+            # lane_center = self.previous_lane_center
+            # full_command = f"command {ANGLE_MID_RIGHT} 120"
+            # self.ser.send(full_command)
+            # return frame
+            
+            self.detect(frame, [
+               [self.camera.ROI_Y_START , self.camera.ROI_Y_END]
+                [self.camera.ROI_X_START - 120 : self.camera.ROI_X_END - 120]
+            ])
     
         # Moving average
         self.LANE_CENTER_HISTORY.append(lane_center)
