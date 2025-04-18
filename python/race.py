@@ -42,7 +42,7 @@ class Robot:
     def loop(self):
         """Main control loop for the robot."""
         while True:
-            ret, usb_camera_frame = self.usb_camera.cap.read()
+            ret, usb_camera_frame = self.usb_camera.read()
             if not ret: 
                 print("Failed to capture frame from camera")
                 break
