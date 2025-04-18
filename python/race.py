@@ -34,7 +34,7 @@ class Robot:
         # Initialize lane detector
         self.lane_detector = LaneDetector(self.usb_camera, self.ser, debug=self.debug)
 
-        self.ultrasonic = Ultrasonic(race=True)
+        self.ultrasonic = Ultrasonic(race=True, ser=self.ser)
         
 
    
