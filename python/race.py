@@ -2,11 +2,11 @@ import cv2
 import time
 import sys
 
-from modules.camera import UsbCamera, ThreadedCamera
+from camera import UsbCamera, ThreadedCamera
 from config import FRAME_DELAY, DEBUG, TRY_EXCEPT
-from modules.lane_detection import LaneDetector
-from modules.ultrasonic import Ultrasonic
-from modules import serial_connector
+from lane_detection import LaneDetector
+from ultrasonic import Ultrasonic
+import serial_connector
 
 
 

@@ -1,10 +1,7 @@
 
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from ..modules.camera import UsbCamera
-from ..config import FRAME_DELAY
+from camera import UsbCamera
+from config import FRAME_DELAY
 import time
 import cv2
 
