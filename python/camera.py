@@ -139,9 +139,10 @@ class CameraDevices:
 
 
 
-class ThreadedCamera:
+class ThreadedCamera(UsbCamera):
     def __init__(self, src=0):
-        self.cap = cv2.VideoCapture(src)
+        super().__init__(src)
+        
         self.ret, self.frame = self.cap.read()
         self.stopped = False
         threading.Thread(target=self._update, daemon=True).start()
