@@ -61,7 +61,7 @@ class LaneDetector:
         edges = cv2.Canny(white_lines, CANNY_LOW, CANNY_HIGH)
     
         # Apply ROI extraction to edges
-        if not roi:
+        if not roi_:
             roi = edges[
                 self.camera.ROI_Y_START : self.camera.ROI_Y_END,
                 self.camera.ROI_X_START : self.camera.ROI_X_END,
