@@ -28,6 +28,8 @@ def initialize_camera(index=0, width=480, height=240):
     cap.set(cv2.CAP_PROP_FPS, TARGET_FPS)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  
+
     # Get video resolution
 
 
