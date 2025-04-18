@@ -2,11 +2,11 @@ import cv2
 import time
 import sys
 
-from camera import UsbCamera
+from modules.camera import UsbCamera, ThreadedCamera
 from config import FRAME_DELAY, DEBUG, TRY_EXCEPT
-from lane_detection import LaneDetector
-from ultrasonic import Ultrasonic
-import serial_connector
+from modules.lane_detection import LaneDetector
+from modules.ultrasonic import Ultrasonic
+from modules import serial_connector
 
 
 
@@ -17,6 +17,7 @@ class Robot:
             len(args) > 2
             and args[1].lower() == "debug"
             and args[2].lower() in ["true", "1", "y", "active"]
+            
         ):
             self.debug = True
         else:
@@ -28,7 +29,7 @@ class Robot:
         self.ser = serial_connector.connect()
 
         # Initialize USB Camera
-        self.usb_camera = UsbCamera(0)
+        self.usb_camera = ThreadedCamera(0)
 
         # Initialize lane detector
         self.lane_detector = LaneDetector(self.usb_camera, self.ser, debug=self.debug)
