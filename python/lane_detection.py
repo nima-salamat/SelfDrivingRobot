@@ -28,6 +28,7 @@ from config import (
     THRESHOLD_VERY_SHARP,
 )
 
+
 class LaneDetector:
     def __init__(self, camera, ser, debug=False):
         self.camera = camera
@@ -51,28 +52,20 @@ class LaneDetector:
                 x = x1 + (x2 - x1) * (y - y1) / dy
                 points.append((int(x), y))
         return points
-  
-    
-    def detect(self, frame, roi_= []):
+
+    def detect(self, frame, roi_=[]):
         # Preprocess image
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         blur = cv2.GaussianBlur(gray, (BLUR_KERNEL, BLUR_KERNEL), 0)
         _, white_lines = cv2.threshold(blur, 200, 255, cv2.THRESH_BINARY)
         edges = cv2.Canny(white_lines, CANNY_LOW, CANNY_HIGH)
-    
+
         # Apply ROI extraction to edges
-        if not roi_:
-            roi = edges[
-                self.camera.ROI_Y_START : self.camera.ROI_Y_END,
-                self.camera.ROI_X_START : self.camera.ROI_X_END,
-            ]
-        else:
-            roi = edges[
-                roi_[0][0] : roi_[0][1],
-                roi[1][0] : roi_[1][1],
-            ]
-            
-    
+        roi = edges[
+            self.camera.ROI_Y_START : self.camera.ROI_Y_END,
+            self.camera.ROI_X_START : self.camera.ROI_X_END,
+        ]
+
         # Detect lines using Hough Transform
         lines = cv2.HoughLinesP(
             roi,
@@ -82,7 +75,7 @@ class LaneDetector:
             minLineLength=HOUGH_MIN_LINE_LEN,
             maxLineGap=HOUGH_MAX_LINE_GAP,
         )
-    
+
         debug_frame = frame.copy() if self.debug else None
         if self.debug:
             cv2.rectangle(
@@ -92,10 +85,10 @@ class LaneDetector:
                 (0, 255, 0),
                 2,
             )
-    
+
         left_lines = []
         right_lines = []
-    
+
         # Process detected lines and categorize them
         if lines is not None:
             for line in lines:
@@ -105,7 +98,7 @@ class LaneDetector:
                 y1_orig = y1 + self.camera.ROI_Y_START
                 x2_orig = x2 + self.camera.ROI_X_START
                 y2_orig = y2 + self.camera.ROI_Y_START
-    
+
                 if x2_orig != x1_orig:
                     slope = (y2_orig - y1_orig) / (x2_orig - x1_orig)
                     if abs(slope) >= MIN_SLOPE:
@@ -116,33 +109,43 @@ class LaneDetector:
                             left_lines.append(line_data)
                         else:
                             right_lines.append(line_data)
-    
+
         # Select the leftmost line for each category
         leftmost_left_line = None
         leftmost_right_line = None
-    
+
         if left_lines:
             # Leftmost left line: smallest x-coordinate at bottom
             leftmost_left_line = min(left_lines, key=lambda l: l[4])  # l[4] is x_bottom
-    
+
         if right_lines:
             # Leftmost right line: smallest x-coordinate at bottom
-            leftmost_right_line = min(right_lines, key=lambda l: l[4])  # l[4] is x_bottom
-    
+            leftmost_right_line = min(
+                right_lines, key=lambda l: l[4]
+            )  # l[4] is x_bottom
+
         # Get points for the selected lines
         left_lane_points = (
-            self.get_points_along_line(leftmost_left_line[0], leftmost_left_line[1], 
-                                        leftmost_left_line[2], leftmost_left_line[3])
+            self.get_points_along_line(
+                leftmost_left_line[0],
+                leftmost_left_line[1],
+                leftmost_left_line[2],
+                leftmost_left_line[3],
+            )
             if leftmost_left_line
             else []
         )
         right_lane_points = (
-            self.get_points_along_line(leftmost_right_line[0], leftmost_right_line[1], 
-                                        leftmost_right_line[2], leftmost_right_line[3])
+            self.get_points_along_line(
+                leftmost_right_line[0],
+                leftmost_right_line[1],
+                leftmost_right_line[2],
+                leftmost_right_line[3],
+            )
             if leftmost_right_line
             else []
         )
-    
+
         # Fit polynomials (x = a*y^2 + b*y + c)
         left_fit = (
             np.polyfit(
@@ -158,7 +161,7 @@ class LaneDetector:
             if right_lane_points
             else None
         )
-    
+
         # Evaluate polynomials at the bottom of the frame
         y_eval = self.camera.height - 1
         x_left = (
@@ -171,7 +174,7 @@ class LaneDetector:
             if right_fit is not None
             else None
         )
-    
+
         # Compute lane center
         if x_left is not None and x_right is not None:
             lane_center = (x_left + x_right) / 2
@@ -180,25 +183,29 @@ class LaneDetector:
         elif x_right is not None:
             lane_center = x_right - self.camera.LANE_WIDTH / 2
         else:
-            # lane_center = self.previous_lane_center
-            # full_command = f"command {ANGLE_MID_RIGHT} 120"
-            # self.ser.send(full_command)
-            # return frame
-            
-            self.detect(frame, [
-               [self.camera.ROI_Y_START , self.camera.ROI_Y_END]
-                [self.camera.ROI_X_START - 120 : self.camera.ROI_X_END - 120]
-            ])
-    
+            lane_center = self.previous_lane_center
+            full_command = f"command {ANGLE_MID_RIGHT} 120"
+            self.ser.send(full_command)
+            return frame
+
+            self.detect(
+                frame,
+                [
+                    [self.camera.ROI_Y_START, self.camera.ROI_Y_END][
+                        self.camera.ROI_X_START - 120 : self.camera.ROI_X_END - 120
+                    ]
+                ],
+            )
+
         # Moving average
         self.LANE_CENTER_HISTORY.append(lane_center)
         if len(self.LANE_CENTER_HISTORY) > HISTORY_LEN:
             self.LANE_CENTER_HISTORY.pop(0)
         lane_center_avg = np.mean(self.LANE_CENTER_HISTORY)
-    
+
         # Compute error
         error = lane_center_avg - FIXED_CENTER
-    
+
         # Determine steering command
         if abs(error) < THRESHOLD_SLOW:
             steering_command = ANGLE_CENTER
@@ -220,7 +227,7 @@ class LaneDetector:
             steering_command = ANGLE_SLOW_LEFT
         else:
             steering_command = ANGLE_MID_RIGHT
-    
+
         # Set speed
         if steering_command in [
             ANGLE_SHARP_LEFT,
@@ -231,11 +238,11 @@ class LaneDetector:
             speed = MODE.default.turn
         else:
             speed = MODE.default.forward
-    
+
         full_command = f"command {steering_command} {speed}"
         self.ser.send(full_command)
         self.previous_lane_center = lane_center_avg
-    
+
         # Debug visualization
         if self.debug and debug_frame is not None:
             # Draw selected lines
@@ -255,7 +262,7 @@ class LaneDetector:
                     (0, 255, 255),
                     2,
                 )
-    
+
             # Draw fitted polynomials
             if left_fit is not None:
                 ploty = np.linspace(
@@ -277,7 +284,7 @@ class LaneDetector:
                         cv2.circle(
                             debug_frame, (int(rightx[i]), ploty[i]), 1, (0, 255, 255), 1
                         )
-    
+
             # Draw lane center and fixed center
             cv2.line(
                 debug_frame,
@@ -321,5 +328,5 @@ class LaneDetector:
                 2,
             )
             return debug_frame
-    
+
         return frame
