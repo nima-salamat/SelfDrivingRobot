@@ -1,6 +1,3 @@
-
----
-
 # **Self Driving Robot** 
 **SelfDrivingRobot** is a Python-based project using Raspberry Pi and OpenCV to autonomously navigate a robot through road-like paths.
 
