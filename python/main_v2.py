@@ -4,10 +4,10 @@ from camera import UsbCamera, ThreadedCamera
 from config import FRAME_DELAY, DEBUG, TRY_EXCEPT
 from lane_detection import LaneDetector
 from crosswalk_detection_v2 import CrosswalkDetector
-from apriltag_detection import ApriltagDetector
-from cross_intersection import IntersectionNavigator
-from ultrasonic import Ultrasonic
-import serial_connector
+from python.detectors.apriltag.apriltag_detection import ApriltagDetector
+from python.crossroads.cross_intersection import IntersectionNavigator
+from python.detectors.ultrasonic.ultrasonic import Ultrasonic
+import python.serial.connector as connector
 import sys
 
 
@@ -26,7 +26,7 @@ class Robot:
         self.try_except = TRY_EXCEPT
 
         # Serial
-        self.ser = serial_connector.connect()
+        self.ser = connector.connect()
 
         # Cameras
         self.usb_camera = ThreadedCamera(0)

@@ -5,8 +5,8 @@ import sys
 from camera import UsbCamera, ThreadedCamera
 from config import FRAME_DELAY, DEBUG, TRY_EXCEPT
 from lane_detection import LaneDetector
-from ultrasonic import Ultrasonic
-import serial_connector
+from python.detectors.ultrasonic.ultrasonic import Ultrasonic
+import python.serial.connector as connector
 
 
 
@@ -26,7 +26,7 @@ class Robot:
         self.try_except = TRY_EXCEPT
 
         # Initialize serial connection
-        self.ser = serial_connector.connect()
+        self.ser = connector.connect()
 
         # Initialize USB Camera
         self.usb_camera = ThreadedCamera(0)

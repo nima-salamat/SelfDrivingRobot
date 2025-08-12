@@ -4,10 +4,10 @@ from camera import UsbCamera
 from config import FRAME_DELAY, DEBUG, TRY_EXCEPT, ULTERASONIC_ENABLED
 from lane_detection import LaneDetector
 from crosswalk_detection import CrosswalkDetector
-from trafficlight_detection import TrafficLightDetector
-from apriltag_detection import ApriltagDetector
-from cross_intersection import IntersectionNavigator
-import serial_connector
+from python.detectors.trafficlight.trafficlight_detection import TrafficLightDetector
+from python.detectors.apriltag.apriltag_detection import ApriltagDetector
+from python.crossroads.cross_intersection import IntersectionNavigator
+import python.serial.connector as connector
 import sys
 
 
@@ -26,7 +26,7 @@ class Robot:
         self.try_except = TRY_EXCEPT
 
         # Serial
-        self.ser = serial_connector.connect()
+        self.ser = connector.connect()
 
         # enable or disable ultersonic
         self.ser.send("ultrasonic on" if ULTERASONIC_ENABLED else "ultrasonic off")
@@ -112,6 +112,7 @@ class Robot:
 
                 if self.debug:
                     cv2.imshow("pi", pi_camera_frame)
+                
 
             # lane
             if not detected_crosswalk:
