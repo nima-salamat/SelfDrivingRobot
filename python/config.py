@@ -168,3 +168,5 @@ ROI_ORDER = "after"  # or "before"
 DETECTOR_TYPE = "HOUGH"  # or "LSD"
 
 # -------------------------------------------------------
+
+THRESHOLD_VALUE_SIMPLE_LANE_DETECTION = 127
