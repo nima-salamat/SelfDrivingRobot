@@ -2,8 +2,8 @@ import cv2
 import time
 from camera import UsbCamera
 from config import FRAME_DELAY, DEBUG, TRY_EXCEPT, ULTERASONIC_ENABLED
-from lane_detection import LaneDetector
-from crosswalk_detection import CrosswalkDetector
+from detectors.lane.lane_detection import LaneDetector
+from detectors.crosswalk.crosswalk_detection import CrosswalkDetector
 from python.detectors.trafficlight.trafficlight_detection import TrafficLightDetector
 from python.detectors.apriltag.apriltag_detection import ApriltagDetector
 from python.crossroads.cross_intersection import IntersectionNavigator
