@@ -1,1 +1,1 @@
-from camera import *
+from .camera import *
