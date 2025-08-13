@@ -3,7 +3,7 @@ from config import THRESHOLD_VALUE_SIMPLE_LANE_DETECTION as threshold_value
 import re
 
 
-class SimpleLaneDetection:
+class LaneDetector:
 
     def __init__(self, serial, points=[], width=None, height=None, point_y=None, 
                  camera=None, point_per_pixel=10, margin_left=10, margin_right=10,
