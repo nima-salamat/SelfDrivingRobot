@@ -4,9 +4,9 @@ import sys
 
 from camera import UsbCamera, ThreadedCamera
 from config import FRAME_DELAY, DEBUG, TRY_EXCEPT
-from lane_detection import LaneDetector
-from python.detectors.ultrasonic.ultrasonic import Ultrasonic
-import python.serial.connector as connector
+from detectors.lane.lane_detection import LaneDetector
+from detectors.ultrasonic.ultrasonic import Ultrasonic
+import serial.connector as connector
 
 
 

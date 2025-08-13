@@ -4,10 +4,10 @@ from camera import UsbCamera
 from config import FRAME_DELAY, DEBUG, TRY_EXCEPT, ULTERASONIC_ENABLED
 from detectors.lane.lane_detection import LaneDetector
 from detectors.crosswalk.crosswalk_detection import CrosswalkDetector
-from python.detectors.trafficlight.trafficlight_detection import TrafficLightDetector
-from python.detectors.apriltag.apriltag_detection import ApriltagDetector
-from python.crossroads.cross_intersection import IntersectionNavigator
-import python.serial.connector as connector
+from detectors.trafficlight.trafficlight_detection import TrafficLightDetector
+from detectors.apriltag.apriltag_detection import ApriltagDetector
+from crossroads.cross_intersection import IntersectionNavigator
+import serial.connector as connector
 import sys
 
 
