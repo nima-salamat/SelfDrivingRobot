@@ -18,3 +18,16 @@ class CameraSettingsManager:
     def load_from_json(self, path="camera_settings.json"):
         with open(path, "r") as f:
             self.settings = CameraSettings.model_validate_json(f.read())
+
+    def get(self):
+        return self.settings.model_dump()
+
+    def put(self, data):
+        keys = data.keys()
+        model = self.settings.model_dump()
+        for k in keys:
+            if k in model:
+                model[k] = data[k]
+        self.settings = CameraSettings(**model)
+        self.save_as_json()
+        return self.settings.model_dump()
