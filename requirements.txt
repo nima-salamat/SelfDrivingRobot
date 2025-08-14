@@ -2,3 +2,4 @@ pyhton-opencv
 apriltag
 picamera2
 numpy
+pydantic
