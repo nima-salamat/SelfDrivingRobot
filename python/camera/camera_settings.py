@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+import os
 
 class CameraSettings(BaseModel):
     brightness: int = Field(0, ge=-100, le=100, description="Brightness level")
@@ -8,26 +9,36 @@ class CameraSettings(BaseModel):
 
 
 class CameraSettingsManager:
-    def __init__(self):
-        self.settings = CameraSettings()
+    def __init__(self, path: str = "camera_settings.json"):
+        self.path = path
+        self.settings = self.load()
+        self.save()
 
-    def save_as_json(self, path="camera_settings.json"):
-        with open(path, "w") as f:
+    def load(self):
+        if os.path.exists(self.path):
+            with open(self.path, "r") as f:
+                return CameraSettings.model_validate_json(f.read())
+        else:
+            return CameraSettings()
+
+    def save(self):
+        with open(self.path, "w") as f:
             f.write(self.settings.model_dump_json(indent=4))
-
-    def load_from_json(self, path="camera_settings.json"):
-        with open(path, "r") as f:
-            self.settings = CameraSettings.model_validate_json(f.read())
 
     def get(self):
         return self.settings.model_dump()
 
     def put(self, data):
-        keys = data.keys()
-        model = self.settings.model_dump()
-        for k in keys:
-            if k in model:
-                model[k] = data[k]
-        self.settings = CameraSettings(**model)
-        self.save_as_json()
+        # model_data = self.settings.model_dump()
+        # for k in data:
+        #     if k in model_data:
+        #         model_data[k] = data[k]
+        # self.settings = CameraSettings(**model_data)
+        # self.save()
+        # return self.settings.model_dump()
+
+        # pydantic automatic (it has validator by itself)
+        updated = self.settings.model_copy(update=data)  # validates automatically
+        self.settings = updated
+        self.save()
         return self.settings.model_dump()
