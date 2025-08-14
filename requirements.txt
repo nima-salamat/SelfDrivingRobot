@@ -1,4 +1,4 @@
-pyhton-opencv
+opencv-python
 apriltag
 picamera2
 numpy
