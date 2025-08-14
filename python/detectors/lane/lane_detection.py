@@ -32,7 +32,7 @@ class LaneDetector:
                 self.height = self.camera.height
                 self.point_y = int(self.height * self.threshold_y)
             
-            elif self.width and self.height and self.point_y:
+            if self.width and self.height and self.point_y:
                 start = 0
                 end = self.width - self.margin_left - self.margin_right
                 step = self.width // self.point_per_pixel # how many point
