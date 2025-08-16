@@ -17,8 +17,10 @@ class TrafficSignDetector:
 
     def detect(self, frame):
         """
-        Detects red/blue traffic signs (Stop, Circular, etc.)
-        Returns: frame with annotations
+        Detect traffic signs in a frame.
+        Returns:
+            - frame with annotations
+            - detections: list of dicts {type, color, bbox}
         """
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
@@ -29,9 +31,10 @@ class TrafficSignDetector:
 
         mask_blue = cv2.inRange(hsv, self.BLUE_LOW, self.BLUE_HIGH)
 
+        # Combine masks
         mask = cv2.bitwise_or(mask_red, mask_blue)
 
-        # Find contours
+        detections = []
         contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         for cnt in contours:
@@ -40,16 +43,31 @@ class TrafficSignDetector:
                 approx = cv2.approxPolyDP(cnt, 0.03 * cv2.arcLength(cnt, True), True)
                 x, y, w, h = cv2.boundingRect(approx)
 
-                # Detect STOP sign (octagon ~ 8 sides, red)
-                if len(approx) == 8 and np.mean(hsv[y:y+h, x:x+w, 0]) < 15:
-                    cv2.putText(frame, "STOP SIGN", (x, y - 10),
+                # Determine color
+                mean_hue = np.mean(hsv[y:y+h, x:x+w, 0])
+                color = "red" if (mean_hue < 15 or mean_hue > 160) else "blue"
+
+                sign_type = None
+
+                # Detect STOP sign (octagon ~ 8 sides)
+                if len(approx) == 8 and color == "red":
+                    sign_type = "STOP SIGN"
+                    cv2.putText(frame, sign_type, (x, y - 10),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
                     cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
 
-                # Detect circular signs (blue background usually)
+                # Detect circular signs (speed limits, mandatory)
                 elif len(approx) > 8:
-                    cv2.putText(frame, "CIRCULAR SIGN", (x, y - 10),
+                    sign_type = "CIRCULAR SIGN"
+                    cv2.putText(frame, sign_type, (x, y - 10),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
                     cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
 
-        return frame
+                if sign_type:
+                    detections.append({
+                        "type": sign_type,
+                        "color": color,
+                        "bbox": (x, y, w, h)
+                    })
+
+        return frame, detections
