@@ -4,7 +4,9 @@ import usb.core
 import usb.util
 import threading
 try:
-    from picamera2 import Picamera2, Transform
+    from picamera2 import Picamera2
+    from libcamera import Transform
+
 except ImportError:
     print("We can't import picamera2 on Windows :D")
 
