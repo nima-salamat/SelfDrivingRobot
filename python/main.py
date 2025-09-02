@@ -131,6 +131,8 @@ if __name__ == "__main__":
     
     def disconnect(self):
         self.ser.close()
+        if isinstance(self.camera, PiCamera):
+            self.camera.cap.stop()
 
 class MainControl:
     def __init__(self):
