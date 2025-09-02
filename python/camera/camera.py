@@ -4,7 +4,7 @@ import usb.core
 import usb.util
 import threading
 try:
-    from picamera2 import Picamera2
+    from picamera2 import Picamera2, Transform
 except ImportError:
     print("We can't import picamera2 on Windows :D")
 
@@ -65,7 +65,10 @@ class UsbCamera(Camera):
 class PiCamera:
     def __init__(self):
         self.picam = Picamera2()
-        config = self.picam.create_preview_configuration(main={"size": (CAMERA_WIDTH, CAMERA_HEIGHT)})
+        config = self.picam.create_preview_configuration(
+            main={"size": (CAMERA_WIDTH, CAMERA_HEIGHT)},
+            transform=Transform(hflip=True, vflip=True)
+        )
         self.picam.configure(config)
         self.picam.start()
         self.cap = self.picam
