@@ -3,7 +3,7 @@ from detectors.trafficlight.trafficlight_detection import TrafficLightDetector
 from detectors.ultrasonic.ultrasonic import Ultrasonic
 from detectors.apriltag.apriltag_detection import ApriltagDetector
 from crossroads.cross_intersection import IntersectionNavigator
-from camera  import PyCamera
+from camera  import PiCamera
 from serial.connector import connect as serial_connector, serial
 import time
 import threading
@@ -21,7 +21,7 @@ class CoreRobot:
 
     def __init__(self):
         self._ser = None
-        self.camera = PyCamera(0)
+        self.camera = PiCamera()
         self.connect()
         self.lane_detector = LaneDetector(serial=self.ser, camera=self.camera)
         self.intersection_nav = IntersectionNavigator(self.ser)
