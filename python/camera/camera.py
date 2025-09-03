@@ -57,24 +57,41 @@ class UsbCamera(Camera):
 
     def read(self):
         ret, frame = self.cap.read()
-        if not ret:
-            return False, None
-        roi = frame[self.ROI_Y_START:self.ROI_Y_END, self.ROI_X_START:self.ROI_X_END]
-        return True, roi
+        frame = cv2.resize(frame, (self.width, self.height), interpolation=cv2.INTER_AREA)
+        frame = cv2.flip(frame, -1)
+        return ret, frame
 
 
 class PiCamera:
     def __init__(self):
         self.picam = Picamera2()
-        config = self.picam.create_preview_configuration(
-            main={"size": (CAMERA_WIDTH, CAMERA_HEIGHT)},
-            transform=Transform(hflip=True, vflip=True)
-        )
-        self.picam.configure(config)
+        config = self.picam2.create_preview_configuration(
+                main={"size": (self.width, self.height), "format": "RGB888"}
+            )
+        self.picam2.configure(config)
+        self.picam2.set_controls({
+            "AeEnable": False,
+            "AwbEnable": False,
+            "AnalogueGain": 1.0,
+            "ExposureTime": 50000,
+            "Brightness": 0.0,
+            "Contrast": 1.0,
+            "Saturation": 1.0,
+            "Sharpness": 0.0,
+            "NoiseReductionMode": 0,
+            "FrameDurationLimits": (50000, 50000),
+        })
         self.picam.start()
-
+        time.sleep(1)
         self.cap = self.picam
         self.width, self.height = CAMERA_WIDTH, CAMERA_HEIGHT
+        
+    
+    def read(self):
+        frame = self.cap.capture_array()
+        frame = cv2.resize(frame, (self.width, self.height), interpolation=cv2.INTER_AREA)
+        frame = cv2.flip(frame, -1)
+        return True, frame
 
 
 class CameraDevices:
@@ -111,16 +128,16 @@ class CameraDevices:
         return cls.camera_devices.get(name)
 
 
-class ThreadedCamera(UsbCamera):
-    def __init__(self, src=0):
-        super().__init__(src)
-        self.ret, self.frame = self.cap.read()
+class ThreadedCamera:
+    def __init__(self, camera):
+        self.camera = camera
+        self.ret, self.frame = self.camera.read()
         self.stopped = False
         threading.Thread(target=self._update, daemon=True).start()
 
     def _update(self):
         while not self.stopped:
-            self.ret, self.frame = self.cap.read()
+            self.ret, self.frame = self.camera.read()
             # Optional: tune sleep if CPU usage is too high
             if FRAME_DELAY > 0:
                 time.sleep(FRAME_DELAY)
@@ -130,3 +147,13 @@ class ThreadedCamera(UsbCamera):
 
     def stop(self):
         self.stopped = True
+
+
+def get_roi_frame(frame, x, y, xp, yp):
+    return frame[y:yp, x:xp]
+
+def get_roi_frame_percentage(frame, x, y, xp, yp):
+    h, w = frame.shape() 
+    x, y = int(x*w), int(y*h)
+    xp, yp = int(xp*w), int(yp*h)
+    return frame[y:yp, x:xp]
