@@ -1,5 +1,5 @@
 from config import current_angle, current_speed, angle_old, speed_old
-from arduino_serial import send_command, close
+from arduino_serial import send_command, close, initialize
 import logging
 
 logger = logging.getLogger(__name__)
@@ -11,6 +11,7 @@ class RobotController:
         self.current_speed = current_speed
         self.angle_old = angle_old
         self.speed_old = speed_old
+        initialize()
 
     def control(self, steering_angle: float) -> None:
         angle_diff = abs(steering_angle - self.current_angle)
