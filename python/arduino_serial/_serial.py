@@ -11,7 +11,7 @@ class ArduinoSerial:
     def initialize(cls):
         # Initialize serial connection
         try:
-            cls.serial_connection = serial.Serial('/dev/serial0', 115200)
+            cls.serial_connection = serial.Serial('/dev/tty0', 115200)
             cls.send_command(b'STOP\r\n')
             cls.send_command(f'M{current_speed}\r\n'.encode())
             cls.send_command(f'S{current_angle}\r\n'.encode())
