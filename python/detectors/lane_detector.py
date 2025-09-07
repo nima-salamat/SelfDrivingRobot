@@ -1,388 +1,330 @@
 import cv2
 import numpy as np
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict
 from cv2 import aruco
 import math
 from arduino_serial import send_command
 import logging
-from config import current_angle, LAST_TAG
-
-logger = logging.getLogger(__name__)
-
+from config import current_angle
+logger = logging.getLogger()
+from config import LAST_TAG
 
 class VisionProcessor:
-    """Refactored VisionProcessor that is safe when debug=False.
+    """Handles lane, crosswalk, AprilTag, and traffic light detection."""
+    global LAST_TAG
 
-    Public API:
-        detector = VisionProcessor(config, mode='race', debug=True)
-        steering, debug_frame_or_none, info = detector.detect(frame)
-    """
-
-    def __init__(self, config: dict, mode: str = "race", debug: bool = True):
+    def __init__(self, config: dict):
         self.config = config
-        self.mode = mode.lower()
-        self.debug = bool(debug)
-        self.last_steering_angle = current_angle
-        self.current_speed = config.get("DEFAULT_SPEED", 100)
+        self.last_steering_angle = current_angle  # Default: straight
+        self.apriltag_detector = None
+         # Initialize ArUco for AprilTag detection
+        self.aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_APRILTAG_36h11)
+        self.aruco_params = aruco.DetectorParameters()
 
-        # prepare aruco (AprilTag) detector once
-        # use APRILTAG dictionary (if OpenCV compiled with AprilTag support)
-        try:
-            self.aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_APRILTAG_36h11)
-        except Exception:
-            # fallback to a generic ArUco if APRILTAG not available
-            self.aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_4X4_50)
-        try:
-            self.aruco_params = aruco.DetectorParameters_create()
-        except AttributeError:
-            # older OpenCV
-            self.aruco_params = aruco.DetectorParameters()
-
-    # ---------------------- Public API ----------------------
-    def set_mode(self, mode: str):
-        self.mode = mode.lower()
-
-    def set_debug(self, debug: bool):
-        self.debug = bool(debug)
-
-    def detect(self, frame: np.ndarray) -> Tuple[float, np.ndarray, Dict[str, object]]:
-        """Main detect method.
-        Returns (steering_angle, debug_frame_or_None, info_dict).
-        If debug is False, debug_frame_or_None is None and no drawing occurs.
-        """
-        if frame is None:
-            raise ValueError("Frame is None")
-
-        # Defensive copy for drawing (only used if debug True)
-        draw_frame = frame.copy() if self.debug else None
+    def detect_lines(self, frame: np.ndarray) -> Tuple[float, np.ndarray, Dict[str, float]]:
+        global LAST_TAG
 
         height, width = frame.shape[:2]
         frame_center = width // 2
+        april_tags_info = {'count': 0, 'ids': []}  # Initialize AprilTag info
+        # Initialize defaults
+        steering_angle = self.last_steering_angle
+        line_center_x = frame_center
+        target_x = frame_center
+        error = 0
+        right_lines_info = []
+        left_lines_info = []
+        cw_lines_info = []
+        at_tags_info = []
+        tl_color = "None"
+        longest_line_length = 0
+        lane_type = "none"
 
-        # default info
-        info = {
-            "line_center_x": frame_center,
-            "target_x": frame_center,
-            "error": 0.0,
-            "lane_type": "none",
-            "steering_angle": self.last_steering_angle,
-            "speed": self.current_speed,
-            "center_right_x": frame_center,
-            "center_left_x": frame_center,
-            "cw_lines": 0,
-            "at_tags": 0,
-            "tl_color": "None",
-            "april_tags_count": 0,
-            "april_tags_ids": []
-        }
-
-        # get ROIs once
-        rois = self._get_rois(frame.shape)
-
-        # race mode: only detect left/right lanes
-        if self.mode == "race":
-            steering_angle, centers, longest = self._detect_lanes_only(frame, rois)
-            info.update({
-                "center_right_x": centers[0],
-                "center_left_x": centers[1],
-                "len": longest,
-            })
-            # draw if debug
-            if self.debug:
-                self._draw_lane_visuals(draw_frame, rois, centers, lane_type="both")
-
-        # city mode: full processing
-        else:
-            # for apriltag, provide draw_roi so aruco markers can be drawn only when debug True
-            steering_angle, centers, cw_count, at_info, tl_color, longest = self._detect_city(frame, rois, draw_frame)
-            info.update({
-                "center_right_x": centers[0],
-                "center_left_x": centers[1],
-                "cw_lines": cw_count,
-                "at_tags": len(at_info),
-                "tl_color": tl_color,
-                "april_tags_count": len(at_info),
-                "april_tags_ids": [t[0] for t in at_info],
-                "len": longest,
-            })
-            if self.debug:
-                self._draw_city_visuals(draw_frame, rois, centers, cw_info_count=cw_count, at_info=at_info, tl_color=tl_color)
-
-        # finalize
-        info["steering_angle"] = steering_angle
-        self.last_steering_angle = steering_angle
-
-        return steering_angle, draw_frame, info
-
-    # ---------------------- ROI helpers ----------------------
-    def _get_rois(self, frame_shape: Tuple[int, int, int]) -> Dict[str, Tuple[int, int, int, int]]:
-        height, width = frame_shape[:2]
-
-        def _rect(top_k, bottom_k, left_k, right_k):
-            top = int(height * self.config[top_k])
-            bottom = int(height * self.config[bottom_k])
-            left = int(width * self.config[left_k])
-            right = int(width * self.config[right_k])
-            # clamp
-            top = max(0, min(top, height - 1))
-            bottom = max(0, min(bottom, height))
-            left = max(0, min(left, width - 1))
-            right = max(left + 1, min(right, width))
-            return (top, bottom, left, right)
-
-        return {
-            "rl": _rect('ROI_TOP_RL', 'ROI_BOTTOM_RL', 'ROI_LEFT_RL', 'ROI_RIGHT_RL'),
-            "ll": _rect('ROI_TOP_LL', 'ROI_BOTTOM_LL', 'ROI_LEFT_LL', 'ROI_RIGHT_LL'),
-            "cw": _rect('ROI_TOP_CW', 'ROI_BOTTOM_CW', 'ROI_LEFT_CW', 'ROI_RIGHT_CW'),
-            "at": _rect('ROI_TOP_AT', 'ROI_BOTTOM_AT', 'ROI_LEFT_AT', 'ROI_RIGHT_AT'),
-            "tl": _rect('ROI_TOP_TL', 'ROI_BOTTOM_TL', 'ROI_LEFT_TL', 'ROI_RIGHT_TL')
-        }
-
-    # ---------------------- Detection building blocks ----------------------
-    def _detect_lanes_only(self, frame: np.ndarray, rois: Dict[str, Tuple[int, int, int, int]]):
-        # Process right lane ROI
-        top_rl, bottom_rl, left_rl, right_rl = rois['rl']
+        # Right lane ROI
+        top_rl = int(height * self.config['ROI_TOP_RL'])
+        bottom_rl = int(height * self.config['ROI_BOTTOM_RL'])
+        left_rl = int(width * self.config['ROI_LEFT_RL'])
+        right_rl = int(width * self.config['ROI_RIGHT_RL'])
+        #print(f"ROI RL: top={top_rl}, bottom={bottom_rl}, left={left_rl}, right={right_rl}")
         roi_frame_rl = frame[top_rl:bottom_rl, left_rl:right_rl]
-        center_right_x, right_lines_info, longest_r = self._process_lane_roi(roi_frame_rl, left_rl, right_rl, is_right=True)
 
-        # Process left lane ROI
-        top_ll, bottom_ll, left_ll, right_ll = rois['ll']
+        # Left lane ROI
+        top_ll = int(height * self.config['ROI_TOP_LL'])
+        bottom_ll = int(height * self.config['ROI_BOTTOM_LL'])
+        left_ll = int(width * self.config['ROI_LEFT_LL'])
+        right_ll = int(width * self.config['ROI_RIGHT_LL'])
+        #print(f"ROI LL: top={top_ll}, bottom={bottom_ll}, left={left_ll}, right={right_ll}")
         roi_frame_ll = frame[top_ll:bottom_ll, left_ll:right_ll]
-        center_left_x, left_lines_info, longest_l = self._process_lane_roi(roi_frame_ll, left_ll, right_ll, is_right=False)
 
-        # compute steering
-        frame_center = frame.shape[1] // 2
-        line_center_x = (center_right_x + center_left_x) / 2
-        error = line_center_x - frame_center
-        if len(right_lines_info) == 0 and len(left_lines_info) == 0:
-            steering_angle = 145
-        else:
-            steering_angle = current_angle + 0.4 * error
-            steering_angle = max(55, min(145, steering_angle))
-
-        longest = max(longest_r, longest_l)
-        return steering_angle, (center_right_x, center_left_x), longest
-
-    def _detect_city(self, frame: np.ndarray, rois: Dict[str, Tuple[int, int, int, int]], draw_frame: np.ndarray):
-        # lanes
-        top_rl, bottom_rl, left_rl, right_rl = rois['rl']
-        roi_frame_rl = frame[top_rl:bottom_rl, left_rl:right_rl]
-        center_right_x, right_lines_info, longest_r = self._process_lane_roi(roi_frame_rl, left_rl, right_rl, is_right=True)
-
-        top_ll, bottom_ll, left_ll, right_ll = rois['ll']
-        roi_frame_ll = frame[top_ll:bottom_ll, left_ll:right_ll]
-        center_left_x, left_lines_info, longest_l = self._process_lane_roi(roi_frame_ll, left_ll, right_ll, is_right=False)
-
-        # crosswalk
-        top_cw, bottom_cw, left_cw, right_cw = rois['cw']
+        # Crosswalk ROI
+        top_cw = int(height * self.config['ROI_TOP_CW'])
+        bottom_cw = int(height * self.config['ROI_BOTTOM_CW'])
+        left_cw = int(width * self.config['ROI_LEFT_CW'])
+        right_cw = int(width * self.config['ROI_RIGHT_CW'])
+        #print(f"ROI CW: top={top_cw}, bottom={bottom_cw}, left={left_cw}, right={right_cw}")
         roi_frame_cw = frame[top_cw:bottom_cw, left_cw:right_cw]
-        cw_lines_info = self._process_crosswalk_roi(roi_frame_cw)
 
-        # apriltag (pass draw ROI slice if drawing enabled)
-        top_at, bottom_at, left_at, right_at = rois['at']
+        # AprilTag ROI
+        top_at = int(height * self.config['ROI_TOP_AT'])
+        bottom_at = int(height * self.config['ROI_BOTTOM_AT'])
+        left_at = int(width * self.config['ROI_LEFT_AT'])
+        right_at = int(width * self.config['ROI_RIGHT_AT'])
+        #print(f"ROI AT: top={top_at}, bottom={bottom_at}, left={left_at}, right={right_at}")
         roi_frame_at = frame[top_at:bottom_at, left_at:right_at]
-        draw_roi_at = None
-        if self.debug and draw_frame is not None:
-            draw_roi_at = draw_frame[top_at:bottom_at, left_at:right_at]
-        at_tags_info = self._process_apriltag_roi(roi_frame_at, left_at, top_at, draw_roi_at)
 
-        # traffic light
-        top_tl, bottom_tl, left_tl, right_tl = rois['tl']
+        # Traffic light ROI
+        top_tl = int(height * self.config['ROI_TOP_TL'])
+        bottom_tl = int(height * self.config['ROI_BOTTOM_TL'])
+        left_tl = int(width * self.config['ROI_LEFT_TL'])
+        right_tl = int(width * self.config['ROI_RIGHT_TL'])
+        #print(f"ROI TL: top={top_tl}, bottom={bottom_tl}, left={left_tl}, right={right_tl}")
         roi_frame_tl = frame[top_tl:bottom_tl, left_tl:right_tl]
-        tl_color = self._process_traffic_light_roi(roi_frame_tl)
 
-        # steering
-        frame_center = frame.shape[1] // 2
-        line_center_x = (center_right_x + center_left_x) / 2
-        error = line_center_x - frame_center
-        if len(right_lines_info) == 0 and len(left_lines_info) == 0:
-            steering_angle = 145
-        else:
-            steering_angle = current_angle + 0.4 * error
-            steering_angle = max(55, min(145, steering_angle))
+        # Process right lane
+        gray_rl = cv2.cvtColor(roi_frame_rl, cv2.COLOR_RGB2GRAY)
+        edge_rl = cv2.Canny(gray_rl, self.config['CANNY_LOW'], self.config['CANNY_HIGH'])
+        edge_dilated_rl = cv2.dilate(edge_rl, np.ones((3, 3), np.uint8), iterations=1)
+        lines_rl = cv2.HoughLinesP(edge_dilated_rl, 1, np.pi/180, self.config['HOUGH_THRESHOLD'],
+                                   minLineLength=self.config['MIN_LINE_LENGTH'], maxLineGap=self.config['MAX_LINE_GAP'])
 
-        longest = max(longest_r, longest_l)
-        return steering_angle, (center_right_x, center_left_x), len(cw_lines_info), at_tags_info, tl_color, longest
-
-    def _process_lane_roi(self, roi_frame: np.ndarray, left_offset: int, right_offset: int, is_right: bool):
-        # assume roi_frame is BGR
-        gray = cv2.cvtColor(roi_frame, cv2.COLOR_BGR2GRAY)
-        edge = cv2.Canny(gray, self.config['CANNY_LOW'], self.config['CANNY_HIGH'])
-        edge_dilated = cv2.dilate(edge, np.ones((3, 3), np.uint8), iterations=1)
-        lines = cv2.HoughLinesP(edge_dilated, 1, np.pi / 180, self.config['HOUGH_THRESHOLD'],
-                                minLineLength=self.config['MIN_LINE_LENGTH'], maxLineGap=self.config['MAX_LINE_GAP'])
-
-        height = roi_frame.shape[0]
-        center_x = (left_offset + right_offset) // 2
-        lines_info: List[tuple] = []
-        longest = 0
-        if lines is not None:
-            for line in lines:
+        center_right_x = right_rl + 10
+        if lines_rl is not None:
+            right_lines = []
+            roi_height_rl = roi_frame_rl.shape[0]
+            for line in lines_rl:
                 for x1, y1, x2, y2 in line:
-                    if x2 == x1:
-                        continue
-                    slope = (y2 - y1) / (x2 - x1)
-                    if abs(slope) > 0.3:
-                        length = math.hypot(x2 - x1, y2 - y1)
-                        # compute x at bottom of ROI
-                        denom = slope if abs(slope) > 1e-5 else 1.0
-                        x_bottom = x1 + (height - y1) / denom
-                        x_bottom = max(0, min(right_offset - left_offset - 1, x_bottom))
-                        x_bottom_full = x_bottom + left_offset
-                        mid_line_x = (left_offset + right_offset) // 2
-                        if is_right and x_bottom_full >= mid_line_x:
-                            lines_info.append((x1, y1, x2, y2, x_bottom_full, length))
-                        elif not is_right and x_bottom_full <= mid_line_x:
-                            lines_info.append((x1, y1, x2, y2, x_bottom_full, length))
-                        longest = max(longest, int(length))
-        if lines_info:
-            center_x = sum(l[4] for l in lines_info) / len(lines_info)
-        return center_x, lines_info, longest
+                    if x2 != x1:
+                        slope = (y2 - y1) / (x2 - x1)
+                        if abs(slope) >.3:
+                            length = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+                            x_bottom = x1 + (roi_height_rl - y1) / slope if abs(slope) > 1e-5 else x1
+                            x_bottom = max(0, min(right_rl - left_rl - 1, x_bottom))
+                            x_bottom_full = x_bottom + left_rl
+                            if x_bottom_full >= frame_center:
+                                right_lines.append((x1, y1, x2, y2, x_bottom, length))
+                                right_lines_info.append((x1, y1, x2, y2, length))
 
-    def _process_crosswalk_roi(self, roi_frame: np.ndarray) -> List[tuple]:
-        gray = cv2.cvtColor(roi_frame, cv2.COLOR_BGR2GRAY)
-        edge = cv2.Canny(gray, self.config['CANNY_LOW'], self.config['CANNY_HIGH'])
-        lines = cv2.HoughLinesP(edge, 1, np.pi / 180, self.config['HOUGH_THRESHOLD'],
-                                minLineLength=20, maxLineGap=self.config['MAX_LINE_GAP'])
-        cw_lines = []
-        if lines is not None:
-            for line in lines:
+            if right_lines:
+                x_bottom_sum = sum(line[4] + left_rl for line in right_lines)
+                center_right_x = x_bottom_sum / len(right_lines)
+                longest_line_length = max(longest_line_length, int(max(line[5] for line in right_lines)))
+
+        # Process left lane
+        gray_ll = cv2.cvtColor(roi_frame_ll, cv2.COLOR_RGB2GRAY)
+        edge_ll = cv2.Canny(gray_ll, self.config['CANNY_LOW'], self.config['CANNY_HIGH'])
+        edge_dilated_ll = cv2.dilate(edge_ll, np.ones((3, 3), np.uint8), iterations=1)
+        lines_ll = cv2.HoughLinesP(edge_dilated_ll, 1, np.pi/180, self.config['HOUGH_THRESHOLD'],
+                                   minLineLength=self.config['MIN_LINE_LENGTH'], maxLineGap=self.config['MAX_LINE_GAP'])
+
+        center_left_x = left_ll - 10
+        if lines_ll is not None:
+            left_lines = []
+            roi_height_ll = roi_frame_ll.shape[0]
+            for line in lines_ll:
                 for x1, y1, x2, y2 in line:
-                    if x2 == x1:
-                        continue
-                    slope = (y2 - y1) / (x2 - x1)
-                    if abs(slope) > 2:
-                        length = math.hypot(x2 - x1, y2 - y1)
-                        if length > 7:
-                            cw_lines.append((x1, y1, x2, y2, length))
-        return cw_lines
+                    if x2 != x1:
+                        slope = (y2 - y1) / (x2 - x1)
+                        if abs(slope) > 0.3:
+                            length = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+                            x_bottom = x1 + (roi_height_ll - y1) / slope if abs(slope) > 1e-5 else x1
+                            x_bottom = max(0, min(right_ll - left_ll - 1, x_bottom))
+                            x_bottom_full = x_bottom + left_ll
+                            if x_bottom_full <= frame_center:
+                                left_lines.append((x1, y1, x2, y2, x_bottom, length))
+                                left_lines_info.append((x1, y1, x2, y2, length))
 
-    def _process_apriltag_roi(self, roi_frame: np.ndarray, left_offset: int, top_offset: int, draw_roi: np.ndarray = None) -> List[tuple]:
-        """Detect AprilTags (ArUco). If draw_roi provided, draw markers there (ROI coordinates)."""
-        gray = cv2.cvtColor(roi_frame, cv2.COLOR_BGR2GRAY)
-        corners, ids, rejected = aruco.detectMarkers(gray, self.aruco_dict, parameters=self.aruco_params)
-        tags = []
-        if ids is not None and len(ids) > 0:
-            # draw markers only on draw_roi (which is a view into the full draw_frame)
-            if draw_roi is not None:
-                try:
-                    aruco.drawDetectedMarkers(draw_roi, corners, ids)
-                except Exception:
-                    # some OpenCV builds expect slightly different API — ignore draw failures
-                    pass
+            if left_lines:
+                x_bottom_sum = sum(line[4] + left_ll for line in left_lines)
+                center_left_x = x_bottom_sum / len(left_lines)
+                longest_line_length = max(longest_line_length, int(max(line[5] for line in left_lines)))
 
-            # take first id as LAST_TAG (preserve existing behavior)
-            try:
-                global LAST_TAG
-                LAST_TAG = int(ids[0][0])
-            except Exception:
-                pass
+        # Process alk
+        gray_cw = cv2.cvtColor(roi_frame_cw, cv2.COLOR_RGB2GRAY)
+        edge_cw = cv2.Canny(gray_cw, self.config['CANNY_LOW'], self.config['CANNY_HIGH'])
+        #edge_dilated_cw = cv2.dilate(edge_cw, np.ones((5, 5), np.uint8), iterations=1)
+        lines_cw = cv2.HoughLinesP(edge_cw, 1, np.pi/180, self.config['HOUGH_THRESHOLD'],
+                                   minLineLength=20, maxLineGap=self.config['MAX_LINE_GAP'])
 
+        if lines_cw is not None:
+            for line in lines_cw:
+                for x1, y1, x2, y2 in line:
+                    if x2 != x1:
+                        slope = (y2 - y1) / (x2 - x1)
+                        if abs(slope) >2:
+                            length = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+                            if length > 7:
+                                cw_lines_info.append((x1, y1, x2, y2, length))
+
+# Process AprilTags
+        
+        gray_at = cv2.cvtColor(roi_frame_at, cv2.COLOR_RGB2GRAY)
+        corners, ids, rejected = aruco.detectMarkers(gray_at, self.aruco_dict, parameters=self.aruco_params)
+        if ids is not None:
+            aruco.drawDetectedMarkers(roi_frame_at, corners, ids)
+            if len(ids) > 0:  # Check if at least one marker is detected
+                LAST_TAG = ids[0][0]  # Get the ID of the first detected marker
+                logger.info("&&&&&&&&&&&&&& 1 &&&&&&&&&&&",LAST_TAG)
+                # Use last_tag as needed, e.g., store it in an instance variable or return it
+                LAST_TAG  # Example: Store in instance variable
+                # Calculate area for each tag
             for i, corner in enumerate(corners):
-                pts = corner[0].astype(int)  # corner pts are ROI-local
-                # compute area (shoelace)
+                # Corner is a list of 4 points: [[x1,y1], [x2,y2], [x3,y3], [x4,y4]]
+                points = corner[0].astype(np.int32)
+                
+                # Calculate polygon area using the shoelace formula
                 area = 0.5 * abs(
-                    sum(pts[j][0] * pts[(j + 1) % 4][1] for j in range(4)) -
-                    sum(pts[j][1] * pts[(j + 1) % 4][0] for j in range(4))
+                    sum(points[j][0] * points[(j + 1) % 4][1] for j in range(4)) -
+                    sum(points[j][1] * points[(j + 1) % 4][0] for j in range(4))
                 )
-                tag_id = int(ids[i][0])
-                tags.append((tag_id, pts.tolist(), area))
-                # if tag very large, stop robot (safety rule)
-                if area > 2000:
-                    try:
-                        send_command(b'STOP\r\n')
-                    except Exception:
-                        logger.exception("Failed to send STOP for big AprilTag")
-        return tags
+            logger.info( "=====================",area) 
+            april_tags_info['count'] = len(ids)
+            april_tags_info['ids'] = ids.flatten().tolist()
+            if(area>2000):
+                send_command(b'STOP\r\n')
+            logger.info("------------------------------------------------",april_tags_info['ids'])
+            #LAST_TAG=april_tags_info['ids']
+            logger.info( "===========  2  ==========",LAST_TAG) 
 
-    def _process_traffic_light_roi(self, roi_frame: np.ndarray) -> str:
-        hsv = cv2.cvtColor(roi_frame, cv2.COLOR_BGR2HSV)
-        # tuning ranges (BGR->HSV) — kept from original but adjusted as arrays
+        else:
+            # send_command(b'F\r\n')
+            logger.info("F341")
+
+        # Place AprilTag ROI back into frame for visualization
+        frame[top_at:bottom_at, left_at:right_at] = roi_frame_at
+
+        # Process traffic light
+        hsv_tl = cv2.cvtColor(roi_frame_tl, cv2.COLOR_RGB2HSV)
+        # Red: Two ranges to handle hue wrap-around
         red_lower1 = np.array([0, 100, 100])
-        red_upper1 = np.array([10, 255, 255])
-        red_lower2 = np.array([160, 100, 100])
+        red_upper1 = np.array([50, 255, 255])
+        red_lower2 = np.array([150, 100, 100])
         red_upper2 = np.array([180, 255, 255])
-        green_lower = np.array([40, 50, 50])
+        # Green
+        green_lower = np.array([25, 100, 100])
         green_upper = np.array([95, 255, 255])
-        yellow_lower = np.array([15, 80, 80])
-        yellow_upper = np.array([35, 255, 255])
+        # Yellow
+        yellow_lower = np.array([20, 100, 100])
+        yellow_upper = np.array([30, 255, 255])
 
-        mask_red1 = cv2.inRange(hsv, red_lower1, red_upper1)
-        mask_red2 = cv2.inRange(hsv, red_lower2, red_upper2)
+        mask_red1 = cv2.inRange(hsv_tl, red_lower1, red_upper1)
+        mask_red2 = cv2.inRange(hsv_tl, red_lower2, red_upper2)
         mask_red = cv2.bitwise_or(mask_red1, mask_red2)
-        mask_green = cv2.inRange(hsv, green_lower, green_upper)
-        mask_yellow = cv2.inRange(hsv, yellow_lower, yellow_upper)
+        mask_green = cv2.inRange(hsv_tl, green_lower, green_upper)
+        mask_yellow = cv2.inRange(hsv_tl, yellow_lower, yellow_upper)
 
         red_pixels = cv2.countNonZero(mask_red)
         green_pixels = cv2.countNonZero(mask_green)
         yellow_pixels = cv2.countNonZero(mask_yellow)
 
         if red_pixels > 250:
-            return "Red"
-        if green_pixels > 6:
-            return "Green"
-        if yellow_pixels > max(red_pixels, green_pixels, 3):
-            return "Yellow"
-        return "None"
+            tl_color = "Red"
+        elif green_pixels >  6:
+            tl_color = "Green"
+        elif yellow_pixels > max(red_pixels, green_pixels, 3):
+            tl_color = "Yellow"
+        else:
+            tl_color = "None"
+        #print(f"Traffic light color: {tl_color}")
 
-    # ---------------------- Drawing helpers ----------------------
-    def _draw_lane_visuals(self, draw_frame: np.ndarray, rois: Dict[str, Tuple[int, int, int, int]], centers: tuple, lane_type: str = "both"):
-        """Draw lane ROIs and centers onto draw_frame. draw_frame must be not None."""
-        if draw_frame is None:
-            return
-        left_rl = rois['rl'][2]
-        right_rl = rois['rl'][3]
-        top_rl = rois['rl'][0]
-        bottom_rl = rois['rl'][1]
-        left_ll = rois['ll'][2]
-        right_ll = rois['ll'][3]
-        top_ll = rois['ll'][0]
-        bottom_ll = rois['ll'][1]
+        # Steering logic
+        right_detected = len(right_lines_info) > 0
+        left_detected = len(left_lines_info) > 0
+        lane_type = "both" if right_detected and left_detected else "right" if right_detected else "left" if left_detected else "none"
+        line_center_x = (center_right_x + center_left_x) / 2
+        target_x = frame_center
+        error = line_center_x - target_x
 
-        center_right_x, center_left_x = centers
+        if not right_detected and not left_detected:
+            steering_angle = 145
+            #print(f"None - Steering angle: {steering_angle:.2f}, Error: {error:.2f}, Midpoint: {line_center_x:.2f}, R Center: {center_right_x:.2f}, L Center: {center_left_x:.2f}, CW Lines: {len(cw_lines_info)}, AT Tags: {len(at_tags_info)}, TL Color: {tl_color}")
+        else:
+            steering_angle = current_angle + 0.4 * error
+            steering_angle = max(55, min(145, steering_angle))
+            #print(f"{lane_type.capitalize()} - Steering angle: {steering_angle:.2f}, Error: {error:.2f}, Midpoint: {line_center_x:.2f}, R Center: {center_right_x:.2f}, L Center: {center_left_x:.2f}, CW Lines: {len(cw_lines_info)}, AT Tags: {len(at_tags_info)}, TL Color: {tl_color}")
+
+        self.last_steering_angle = steering_angle
+
+        # Draw visualization
+        lanes_frame = frame.copy()
         # Right ROI (yellow)
-        cv2.rectangle(draw_frame, (left_rl, top_rl), (right_rl, bottom_rl), (0, 255, 255), 2)
-        cv2.putText(draw_frame, "RL", (left_rl + 5, top_rl + 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
+        cv2.rectangle(lanes_frame, (left_rl, top_rl), (right_rl, bottom_rl), (0, 255, 255), 2)
+        cv2.putText(lanes_frame, "RL", (left_rl + 5, top_rl + 25), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
         # Left ROI (cyan)
-        cv2.rectangle(draw_frame, (left_ll, top_ll), (right_ll, bottom_ll), (255, 255, 0), 2)
-        cv2.putText(draw_frame, "LL", (left_ll + 5, top_ll + 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-        # Draw lane center lines
-        cv2.line(draw_frame, (int(center_right_x), top_rl), (int(center_right_x), bottom_rl), (255, 0, 0), 2)
-        cv2.line(draw_frame, (int(center_left_x), top_ll), (int(center_left_x), bottom_ll), (0, 0, 255), 2)
-
-    def _draw_city_visuals(self, draw_frame: np.ndarray, rois: Dict[str, Tuple[int, int, int, int]], centers: tuple, cw_info_count: int, at_info: List[tuple], tl_color: str):
-        """Draw city overlays (lanes, crosswalk, apriltags, traffic light) on draw_frame."""
-        if draw_frame is None:
-            return
-        # draw lane + cw + at + tl overlays
-        self._draw_lane_visuals(draw_frame, rois, centers)
-
-        left_cw, top_cw, right_cw, bottom_cw = rois['cw'][2], rois['cw'][0], rois['cw'][3], rois['cw'][1]
-        left_at, top_at, right_at, bottom_at = rois['at'][2], rois['at'][0], rois['at'][3], rois['at'][1]
-        left_tl, top_tl, right_tl, bottom_tl = rois['tl'][2], rois['tl'][0], rois['tl'][3], rois['tl'][1]
-
+        cv2.rectangle(lanes_frame, (left_ll, top_ll), (right_ll, bottom_ll), (255, 255, 0), 2)
+        cv2.putText(lanes_frame, "LL", (left_ll + 5, top_ll + 25), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         # Crosswalk ROI (green)
-        cv2.rectangle(draw_frame, (left_cw, top_cw), (right_cw, bottom_cw), (0, 255, 0), 2)
-        cv2.putText(draw_frame, "CW", (left_cw + 5, top_cw + 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
-        # AprilTag ROI (green)
-        cv2.rectangle(draw_frame, (left_at, top_at), (right_at, bottom_at), (0, 255, 0), 2)
-        cv2.putText(draw_frame, "AT", (left_at + 5, top_at + 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+        cv2.rectangle(lanes_frame, (left_cw, top_cw), (right_cw, bottom_cw), (0, 255, 0), 2)
+        cv2.putText(lanes_frame, "CW", (left_cw + 5, top_cw + 25), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+         # AprilTag ROI (green)
+        cv2.rectangle(lanes_frame, (left_at, top_at), (right_at, bottom_at), (0, 255, 0), 2)
+        cv2.putText(lanes_frame, "AT", (left_at + 5, top_at + 25), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
         # Traffic light ROI (magenta)
-        cv2.rectangle(draw_frame, (left_tl, top_tl), (right_tl, bottom_tl), (255, 0, 255), 2)
-        cv2.putText(draw_frame, "TL", (left_tl + 5, top_tl + 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 1)
+        cv2.rectangle(lanes_frame, (left_tl, top_tl), (right_tl, bottom_tl), (255, 0, 255), 2)
+        cv2.putText(lanes_frame, "TL", (left_tl + 5, top_tl + 25), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 1)
 
-        # Draw AprilTag boxes and ids (at_info contains ROI-local corners)
-        for tag_id, corners, area in at_info:
-            pts = [(int(c[0]) + left_at, int(c[1]) + top_at) for c in corners]
+        # Draw lane center lines
+        if right_detected:
+            cv2.line(lanes_frame, (int(center_right_x), top_rl), (int(center_right_x), bottom_rl), (255, 0, 0), 2)
+        else:
+            cv2.line(lanes_frame, (int(center_right_x), top_rl), (int(center_right_x), bottom_rl), (255, 0, 0), 1, cv2.LINE_AA)
+        if left_detected:
+            cv2.line(lanes_frame, (int(center_left_x), top_ll), (int(center_left_x), bottom_ll), (0, 0, 255), 2)
+        else:
+            cv2.line(lanes_frame, (int(center_left_x), top_ll), (int(center_left_x), bottom_ll), (0, 0, 255), 1, cv2.LINE_AA)
+
+        # Draw crosswalk lines
+        for line in cw_lines_info:
+            x1, y1, x2, y2, _ = line
+            cv2.line(lanes_frame, (x1 + left_cw, y1 + top_cw), (x2 + left_cw, y2 + top_cw), (255, 255, 255), 2)
+
+        # Draw AprilTags
+        for tag in at_tags_info:
+            tag_id, corners = tag
+            corners = [(int(c[0]) + left_at, int(c[1]) + top_at) for c in corners]
             for i in range(4):
-                cv2.line(draw_frame, pts[i], pts[(i + 1) % 4], (0, 255, 0), 2)
-            cx = int(sum(p[0] for p in pts) / 4)
-            cy = int(sum(p[1] for p in pts) / 4)
-            cv2.putText(draw_frame, f"ID: {tag_id}", (cx, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                cv2.line(lanes_frame, corners[i], corners[(i + 1) % 4], (0, 255, 0), 2)
+            center_x = int(sum(c[0] for c in corners) / 4)
+            center_y = int(sum(c[1] for c in corners) / 4)
+            cv2.putText(lanes_frame, f"ID: {tag_id}", (center_x, center_y), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
         # Draw traffic light color
-        cv2.putText(draw_frame, f"Color: {tl_color}", (left_tl + 5, top_tl + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+        cv2.putText(lanes_frame, f"Color: {tl_color}", (left_tl + 5, top_tl + 15), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
 
-        # stats
-        cv2.putText(draw_frame, f"CW Lines: {cw_info_count}", (left_cw + 5, top_cw + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
-        cv2.putText(draw_frame, f"AT Tags: {len(at_info)}", (left_at + 5, top_at + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+        cv2.putText(lanes_frame, f"R Lines: {len(right_lines_info)}", (left_rl + 5, top_rl + 15), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+        cv2.putText(lanes_frame, f"L Lines: {len(left_lines_info)}", (left_ll + 5, top_ll + 15), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+        cv2.putText(lanes_frame, f"CW Lines: {len(cw_lines_info)}", (left_cw + 5, top_cw + 15), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+        cv2.putText(lanes_frame, f"AT Tags: {len(at_tags_info)}", (left_at + 5, top_at + 15), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+        cv2.putText(lanes_frame, f"Len: {longest_line_length} px", (left_rl + 5, top_rl + 30), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+        cv2.putText(lanes_frame, f"Lane: {lane_type}", (10, 70), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+        cv2.putText(lanes_frame, f"AT Tags: {april_tags_info['count']}", (left_at + 5, top_at + 15), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+
+        line_info = {
+            'line_center_x': line_center_x,
+            'target_x': target_x,
+            'error': error,
+            'lane_type': lane_type,
+            'steering_angle': steering_angle,
+            'speed': self.current_speed if hasattr(self, 'current_speed') else 100,
+            'center_right_x': center_right_x,
+            'center_left_x': center_left_x,
+            'cw_lines': len(cw_lines_info),
+            'at_tags': len(at_tags_info),
+            'tl_color': tl_color,
+            'april_tags_count': april_tags_info['count'],
+            'april_tags_ids': april_tags_info['ids']
+        }
+        return steering_angle, lanes_frame, line_info
