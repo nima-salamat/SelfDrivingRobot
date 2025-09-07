@@ -60,11 +60,14 @@ class LaneTrackingVehicle:
         # Pass mode and debug/display flag to VisionProcessor
         self.vision = VisionProcessor(self.config, mode=mode, debug=display)
 
-        self.mode = mode.lower()
-        # self.state = "WAITING"
-        # self.move_status = False
         self.state = "LINE_FOLLOWING"
         self.move_status = True
+        
+        self.mode = mode.lower()
+        if display:
+            self.state = "WAITING"
+            self.move_status = False
+            
         self.gpio_pin = 23
         self.display_enabled = display
         self._setup_gpio()
@@ -201,19 +204,20 @@ class LaneTrackingVehicle:
                 self._display_frame(display_frame, info, fps)
 
             # global key handling (stop / quit / manual commands)
-            key = cv2.waitKey(1) & 0xFF
-            if key == ord('w') or not self._check_gpio():
-                self.state = "LINE_FOLLOWING"
-                self.move_status = True
-                
-                logger.info("Running robot (W pressed)")
-            elif key == ord('q'):
-                break
-            elif key == ord('f'):
-                send_command(b'F\r\n')
-                logger.info("Manual F")
-            elif key == ord('s'):
-                send_command(b'STOP\r\n')
+            if self.display_enabled:
+                key = cv2.waitKey(1) & 0xFF
+                if key == ord('w') or not self._check_gpio():
+                    self.state = "LINE_FOLLOWING"
+                    self.move_status = True
+                    
+                    logger.info("Running robot (W pressed)")
+                elif key == ord('q'):
+                    break
+                elif key == ord('f'):
+                    send_command(b'F\r\n')
+                    logger.info("Manual F")
+                elif key == ord('s'):
+                    send_command(b'STOP\r\n')
 
         self._cleanup()
 
