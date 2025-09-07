@@ -21,7 +21,7 @@ class VisionProcessor:
         self.aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_APRILTAG_36h11)
         self.aruco_params = aruco.DetectorParameters()
 
-    def detect_lines(self, frame: np.ndarray) -> Tuple[float, np.ndarray, Dict[str, float]]:
+    def detect(self, frame: np.ndarray) -> Tuple[float, np.ndarray, Dict[str, float]]:
         global LAST_TAG
 
         height, width = frame.shape[:2]
