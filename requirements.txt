@@ -1,4 +1,3 @@
-pyhton-opencv
-apriltag
-picamera2
+opencv-python
+rip
 numpy
