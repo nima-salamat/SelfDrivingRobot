@@ -58,7 +58,7 @@ class LaneTrackingVehicle:
         self.camera = PICamera(self.config['F_Width'], self.config['F_Height'])
         self.robot = RobotController()
         # Pass mode and debug/display flag to VisionProcessor
-        self.vision = VisionProcessor(self.config, mode=mode, debug=display)
+        self.vision = VisionProcessor(self.config)
 
         self.state = "LINE_FOLLOWING"
         self.move_status = True
