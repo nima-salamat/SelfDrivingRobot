@@ -136,7 +136,7 @@ class LaneTrackingVehicle:
 
             elif self.state == "LINE_FOLLOWING":
                 # Crosswalk handling (city mode only — but we can keep check for both)
-                if info.get('cw_lines', 0) >= 7:
+                if info.get('cw_lines', 0) >= 7 and self.mode == "city":
                     send_command(b'STOP\r\n')
                     if cross_time == 0:
                         cross_time = time.time()
