@@ -10,7 +10,7 @@ from typing import Dict
 import logging
 from collections import defaultdict
 import threading
-
+import numpy as np
 logger = logging.getLogger(__name__)
 
 
@@ -215,7 +215,7 @@ class LaneTrackingVehicle:
 
         self._cleanup()
 
-    def _display_frame(self, frame: 'np.ndarray', line_info: Dict[str, float], fps: float) -> None:
+    def _display_frame(self, frame: np.ndarray, line_info: Dict[str, float], fps: float) -> None:
         # Reuse original overlay logic but safely handle None
         if frame is None:
             return
