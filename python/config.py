@@ -1,5 +1,5 @@
 # Robot control variables
-current_angle = 107      # Servo angle (30-150, 107 is straight)
+current_angle = 90      # Servo angle (30-150, 107 is straight)
 current_speed = 200     # Speed (200-500, higher value = slower)
 angle_old = 107
 speed_old = 200
@@ -46,3 +46,7 @@ ROI_TOP_TL = 0.0    # 0% from top
 ROI_BOTTOM_TL = 0.2 # 20% from top
 ROI_LEFT_TL = 0.35  # 25% from left
 ROI_RIGHT_TL = 0.7 # 75% from left
+
+
+# last tag
+LAST_TAG = None
