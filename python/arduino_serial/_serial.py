@@ -13,7 +13,7 @@ class ArduinoSerial:
         try:
             cls.serial_connection = serial.Serial('/dev/serial0', 115200)
             cls.send_command(b'STOP\r\n')
-            cls.send_command(f'SPD{current_speed}\r\n'.encode())
+            cls.send_command(f'M{current_speed}\r\n'.encode())
             cls.send_command(f'S{current_angle}\r\n'.encode())
         except serial.SerialException:
             logger.error("Failed to initialize serial port. Robot control disabled.")

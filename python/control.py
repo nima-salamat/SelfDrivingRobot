@@ -25,7 +25,7 @@ class RobotController:
             self.angle_old = new_angle
 
         if self.current_speed != self.speed_old:
-            send_command(f'SPD{self.current_speed}\r\n'.encode())
+            send_command(f'M{self.current_speed}\r\n'.encode())
             self.speed_old = self.current_speed
 
         self.current_angle = new_angle
