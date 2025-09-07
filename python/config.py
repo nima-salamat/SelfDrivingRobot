@@ -19,13 +19,13 @@ F_Height = 216
 
 # ROI for right lane detection (by percentage)
 ROI_TOP_RL = 0.5  # 85% from top
-ROI_BOTTOM_RL = 0.8  # 100% from top
+ROI_BOTTOM_RL = 1 # 100% from top
 ROI_LEFT_RL = 0.6   # 60% from left
 ROI_RIGHT_RL = 1.0  # 100% from left
 
 # ROI for left lane detection (by percentage)
 ROI_TOP_LL = 0.5  # 85% from top
-ROI_BOTTOM_LL = 0.8  # 100% from top
+ROI_BOTTOM_LL = 1  # 100% from top
 ROI_LEFT_LL = 0.0   # 0% from left
 ROI_RIGHT_LL = 0.4  # 40% from left
 

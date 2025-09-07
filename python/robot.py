@@ -193,6 +193,7 @@ class LaneTrackingVehicle:
                     send_command(b'F\r\n')
                     logger.debug("Command F sent for moving")
                     # Use robot controller to apply steering
+                    
                     try:
                         self.robot.control(steering_angle)
                     except Exception as e:
