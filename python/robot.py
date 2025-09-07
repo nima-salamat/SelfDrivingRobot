@@ -61,8 +61,10 @@ class LaneTrackingVehicle:
         self.vision = VisionProcessor(self.config, mode=mode, debug=display)
 
         self.mode = mode.lower()
-        self.state = "WAITING"
-        self.move_status = False
+        # self.state = "WAITING"
+        # self.move_status = False
+        self.state = "LINE_FOLLOWING"
+        self.move_status = True
         self.gpio_pin = 23
         self.display_enabled = display
         self._setup_gpio()
