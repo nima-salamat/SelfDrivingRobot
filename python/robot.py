@@ -207,17 +207,16 @@ class LaneTrackingVehicle:
             # global key handling (stop / quit / manual commands)
             if self.display_enabled:
                 key = cv2.waitKey(1) & 0xFF
-                if key == ord('w') or not self._check_gpio():
+                if key == ord('w') or self._check_gpio():
                     self.state = "LINE_FOLLOWING"
                     self.move_status = True
-                    
                     logger.info("Running robot (W pressed)")
-                elif key == ord('q'):
+                if key == ord('q'):
                     break
-                elif key == ord('f'):
+                if key == ord('f'):
                     send_command(b'F\r\n')
                     logger.info("Manual F")
-                elif key == ord('s'):
+                if key == ord('s'):
                     send_command(b'STOP\r\n')
 
         self._cleanup()

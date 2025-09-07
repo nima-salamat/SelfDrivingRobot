@@ -14,6 +14,7 @@ class RobotController:
         initialize()
 
     def control(self, steering_angle: float) -> None:
+        print(steering_angle, " in control")
         angle_diff = abs(steering_angle - self.current_angle)
 
         self.current_speed = min(255, 100 + angle_diff)
@@ -31,6 +32,8 @@ class RobotController:
 
         self.current_angle = new_angle
 
+        print(steering_angle, " end control")
+        
     def close(self) -> None:
         send_command(b'STOP\r\n')
         close()

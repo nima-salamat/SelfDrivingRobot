@@ -23,6 +23,7 @@ class ArduinoSerial:
     @classmethod
     def send_command(cls, command: bytes) -> None:
         """Global function to send commands via serial."""
+        print(cls.serial_connection, cls.serial_connection.is_open)
         if cls.serial_connection is not None and cls.serial_connection.is_open:
             cls.serial_connection.write(command)
         else:
