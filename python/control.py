@@ -15,7 +15,7 @@ class RobotController:
     def control(self, steering_angle: float) -> None:
         angle_diff = abs(steering_angle - self.current_angle)
 
-        self.current_speed = min(300, 200 + angle_diff)
+        self.current_speed = min(255, 100 + angle_diff)
 
         logger.info(f"Speed: {self.current_speed}, Angle diff: {angle_diff:.2f}")
 
