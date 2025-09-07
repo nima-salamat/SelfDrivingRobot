@@ -202,7 +202,8 @@ class LaneTrackingVehicle:
                 # Display frame and info
                 end_time = time.time()
                 fps = 1 / (end_time - start_time) if (end_time - start_time) > 0 else 0
-                self._display_frame(display_frame, info, fps)
+                if self.display_enabled:
+                    self._display_frame(display_frame, info, fps)
 
             # global key handling (stop / quit / manual commands)
             if self.display_enabled:
