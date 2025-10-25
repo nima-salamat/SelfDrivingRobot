@@ -1,11 +1,11 @@
 #include <Servo.h>
 
 // ----- Motor pins
-int IN1 = 10; 
-int M1 = 12;
+int IN1 = 12; 
+int M1 = 13;
 
-int IN2 = 11;
-int M2 = 13;
+int IN2 = 3;
+int M2 = 8;
 
 // ----- Servo
 Servo myServo;
