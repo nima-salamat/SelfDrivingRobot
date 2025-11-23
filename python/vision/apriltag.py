@@ -1,15 +1,21 @@
 import cv2
+from cv2 import aruco
 from config import AT_TOP_ROI, AT_BOTTOM_ROI, AT_LEFT_ROI, AT_RIGHT_ROI
+import logging
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 class ApriltagDetector:
     def __init__(self):
-        # Define the dictionary for ArUco markers with the correct arguments
-        self.aruco_dict = cv2.aruco.Dictionary_create(cv2.aruco.DICT_6X6_250, 6)  # Correct dictionary creation
-        self.parameters = cv2.aruco.DetectorParameters_create()
+        # Use predefined dictionary for AprilTag 36h11
+        self.aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_APRILTAG_36h11)
+        self.aruco_params = aruco.DetectorParameters_create()
+        logger.info("ArUco AprilTag 36h11 dictionary initialized")
 
     def detect(self, frame) -> list:
         """
-        Detects ArUco markers in the given frame. (Simulated AprilTags with ArUco markers)
+        Detects AprilTag 36h11 markers in the given frame.
 
         Args:
         - frame: Input image (frame from camera).
@@ -20,8 +26,8 @@ class ApriltagDetector:
         # Convert frame to grayscale for ArUco detection
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         
-        # Detect ArUco markers in the grayscale image
-        corners, ids, rejectedImgPoints = cv2.aruco.detectMarkers(gray, self.aruco_dict, parameters=self.parameters)
+        # Detect ArUco markers in the grayscale image using AprilTag 36h11 dictionary
+        corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, self.aruco_dict, parameters=self.aruco_params)
         
         detected_tags = []
         
