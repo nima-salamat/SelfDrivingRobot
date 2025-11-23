@@ -3,13 +3,13 @@ from config import AT_TOP_ROI, AT_BOTTOM_ROI, AT_LEFT_ROI, AT_RIGHT_ROI
 
 class ApriltagDetector:
     def __init__(self):
-        # Define the dictionary for ArUco markers (simulated AprilTags with ArUco markers)
-        self.aruco_dict = cv2.aruco.Dictionary(cv2.aruco.DICT_6X6_250)
+        # Define the dictionary for ArUco markers with the correct arguments
+        self.aruco_dict = cv2.aruco.Dictionary_create(cv2.aruco.DICT_6X6_250, 6)  # Correct dictionary creation
         self.parameters = cv2.aruco.DetectorParameters_create()
 
     def detect(self, frame) -> list:
         """
-        Detects ArUco markers in the given frame (simulated AprilTags with ArUco markers).
+        Detects ArUco markers in the given frame. (Simulated AprilTags with ArUco markers)
 
         Args:
         - frame: Input image (frame from camera).
