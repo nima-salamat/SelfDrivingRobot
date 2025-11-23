@@ -60,3 +60,4 @@ SPEED = 230
 
 # --- Crosswalk Setting ---
 CROSSWALK_SLEEP = 3
+CROSSWALK_THRESH_SPEND = 10
