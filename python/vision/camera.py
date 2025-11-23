@@ -1,0 +1,142 @@
+from config import default_width, default_height, CAMERA_MODE
+try:
+    from picamera2 import Picamera2
+except ImportError:
+    Picamera2 = None
+
+from time import sleep
+import cv2
+import logging
+
+logger = logging.getLogger(__name__)
+
+class Camera:
+    def __init__(self, width=default_width, height=default_height, mode=CAMERA_MODE):
+        self.width = width
+        self.height = height
+        self.mode = mode
+        self.pi_mode = False
+        self.camera_initialized = False
+
+        # Initialize camera based on mode
+        if mode == "picam" and Picamera2 is not None:
+            try:
+                self.pi_mode = True
+                self.picam = Picamera2()
+                self.setup_camera()
+                logger.info("Using Picamera2")
+            except Exception as e:
+                logger.error(f"Failed to initialize Picamera2: {e}")
+                logger.info("Falling back to OpenCV")
+                self.pi_mode = False
+                self.cap = cv2.VideoCapture(0)
+                self.setup_camera()
+        else:
+            self.pi_mode = False
+            self.cap = cv2.VideoCapture(0)
+            self.setup_camera()
+            logger.info("Using OpenCV VideoCapture")
+
+    def setup_camera(self):
+        if self.pi_mode:
+            try:
+                config = self.picam.create_preview_configuration(
+                    main={"size": (self.width, self.height), "format": "RGB888"}
+                )
+                self.picam.configure(config)
+                
+                # Try to set controls, but continue if it fails
+                try:
+                    self.picam.set_controls({
+       "AeEnable": True,
+    "AwbEnable": True,
+    "AnalogueGain": 3.0, 
+    "ExposureTime": 50000,  
+   
+})
+
+
+                except Exception as e:
+                    logger.debug(f"Could not set manual camera controls: {e}")
+                
+                self.picam.start()
+                sleep(2)  # Give camera more time to initialize
+                self.camera_initialized = True
+                
+            except Exception as e:
+                logger.error(f"Picamera2 setup failed: {e}")
+                self.camera_initialized = False
+                raise
+
+        else:
+            # OpenCV camera setup
+            if not self.cap.isOpened():
+                # Try to reopen
+                self.cap = cv2.VideoCapture(0)
+                
+            if not self.cap.isOpened():
+                logger.error("Failed to open webcam (index 0)")
+                raise RuntimeError("No webcam detected.")
+                
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
+            self.cap.set(cv2.CAP_PROP_FPS, 30)
+            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            
+            # Test capture
+            for _ in range(5):  # Try a few times
+                ret, frame = self.cap.read()
+                if ret and frame is not None:
+                    self.camera_initialized = True
+                    break
+                sleep(0.1)
+            
+            if not self.camera_initialized:
+                logger.error("Webcam test capture failed")
+                raise RuntimeError("Webcam not functioning properly")
+
+    def capture_frame(self):
+        if not self.camera_initialized:
+            logger.error("Camera not initialized")
+            return None
+
+        try:
+            if self.pi_mode:
+                frame = self.picam.capture_array()
+                if frame is None or frame.size == 0:
+                    logger.warning("Picamera2 returned empty frame")
+                    return None
+            else:
+                ret, frame = self.cap.read()
+                if not ret or frame is None:
+                    logger.warning("OpenCV camera returned no frame")
+                    return None
+
+            # Resize and convert if necessary
+            if frame.shape[:2] != (self.height, self.width):
+                frame = cv2.resize(frame, (self.width, self.height), interpolation=cv2.INTER_AREA)
+            
+            # Ensure frame is in BGR format for OpenCV
+            if len(frame.shape) == 3 and frame.shape[2] == 3:
+                if self.pi_mode:  # Picamera2 returns RGB, convert to BGR
+                    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            
+            return frame
+
+        except Exception as e:
+            logger.error(f"Error capturing frame: {e}")
+            return None
+
+    def release(self):
+        self.camera_initialized = False
+        if self.pi_mode:
+            try:
+                self.picam.stop()
+                self.picam.close()
+            except Exception as e:
+                logger.error(f"Error releasing Picamera2: {e}")
+        else:
+            try:
+                self.cap.release()
+            except Exception as e:
+                logger.error(f"Error releasing OpenCV camera: {e}")
