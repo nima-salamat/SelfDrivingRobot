@@ -63,7 +63,7 @@ class Robot:
         logger.info(f"starting . . . ")
         try:
             while True:
-                
+                angle=90
                 if self.crosswalk_time_start != 0:
                     frame = self.camera.capture_frame()
                     

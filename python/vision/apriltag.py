@@ -10,7 +10,7 @@ class ApriltagDetector:
     def __init__(self):
         # Use predefined dictionary for AprilTag 36h11
         self.aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_APRILTAG_36h11)
-        self.aruco_params = aruco.DetectorParameters_create()
+        self.aruco_params = aruco.DetectorParameters()
         logger.info("ArUco AprilTag 36h11 dictionary initialized")
 
     def detect(self, frame) -> list:
