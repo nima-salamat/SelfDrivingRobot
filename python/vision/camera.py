@@ -41,7 +41,7 @@ class Camera:
         if self.pi_mode:
             try:
                 config = self.picam.create_preview_configuration(
-                    main={"size": (self.width, self.height), "format": "RGB888"}
+                    main={"size": (680, 420), "format": "RGB888"}
                 )
                 self.picam.configure(config)
                 
@@ -95,7 +95,7 @@ class Camera:
                 logger.error("Webcam test capture failed")
                 raise RuntimeError("Webcam not functioning properly")
 
-    def capture_frame(self):
+    def capture_frame(self, resize=True):
         if not self.camera_initialized:
             logger.error("Camera not initialized")
             return None
@@ -111,11 +111,11 @@ class Camera:
                 if not ret or frame is None:
                     logger.warning("OpenCV camera returned no frame")
                     return None
-
-            # Resize and convert if necessary
-            if frame.shape[:2] != (self.height, self.width):
-                frame = cv2.resize(frame, (self.width, self.height), interpolation=cv2.INTER_AREA)
-            
+            if resize:
+                # Resize and convert if necessary
+                if frame.shape[:2] != (self.height, self.width):
+                    frame = cv2.resize(frame, (self.width, self.height), interpolation=cv2.INTER_AREA)
+                
             # Ensure frame is in BGR format for OpenCV
             if len(frame.shape) == 3 and frame.shape[2] == 3:
                 if self.pi_mode:  # Picamera2 returns RGB, convert to BGR
