@@ -31,6 +31,12 @@ CW_BOTTOM_ROI = 1.0
 CW_LEFT_ROI = 0.3
 CW_RIGHT_ROI = 0.7
 
+# Apriltag ROI
+AT_TOP_ROI = 0.0
+AT_BOTTOM_ROI = 0.4
+AT_LEFT_ROI = 0.7
+AT_RIGHT_ROI = 1.0
+
 # --- Control Gains ---
 # These are proportional gains for steering correction
 LOW_KP = 0.4   # smaller correction when error is small
