@@ -1,1 +1,1 @@
-from . import *
+from .controller import *
