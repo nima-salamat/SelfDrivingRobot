@@ -4,7 +4,7 @@ from config import AT_TOP_ROI, AT_BOTTOM_ROI, AT_LEFT_ROI, AT_RIGHT_ROI
 class ApriltagDetector:
     def __init__(self):
         # Define the dictionary for ArUco markers (simulated AprilTags with ArUco markers)
-        self.aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_6X6_250)
+        self.aruco_dict = cv2.aruco.Dictionary(cv2.aruco.DICT_6X6_250)
         self.parameters = cv2.aruco.DetectorParameters_create()
 
     def detect(self, frame) -> list:
