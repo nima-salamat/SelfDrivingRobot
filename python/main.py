@@ -64,7 +64,7 @@ class Robot:
         try:
             while True:
                 angle=90
-                if self.crosswalk_time_start != 0:
+                if self.crosswalk_time_start == 0:
                     frame = self.camera.capture_frame()
                     
                     result = self.vision.detect(frame)
