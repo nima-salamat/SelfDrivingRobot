@@ -34,8 +34,10 @@ const int STOP_DISTANCE_CM = 20; // stop if any ultrasonic reads <= 20 cm
 
 // ----- Debug
 bool debugEnabled = true;
-#define DBG_PRINT(x)  if(debugEnabled) Serial.print(x)
-#define DBG_PRINTLN(x) if(debugEnabled) Serial.println(x)
+#undef DBG_PRINT
+#undef DBG_PRINTLN
+#define DBG_PRINT(x) ((void)0)
+#define DBG_PRINTLN(x) ((void)0)
 
 // ----- Serial input
 String inputString = "";
@@ -124,8 +126,7 @@ void parseAndEnqueueSpaceSeparated(String line) {
     char head = tolower(t0.charAt(0));
     if (head != 'f' && head != 'b') {
       // If token isn't a direction, skip it (robustness)
-      Serial.print("Skipping unexpected token: ");
-      Serial.println(t0);
+      // Skipped unexpected token
       continue;
     }
 
@@ -135,9 +136,7 @@ void parseAndEnqueueSpaceSeparated(String line) {
     String sAngle = getNextToken(line, pos);
 
     if (sSpeed.length() == 0 || sPulses.length() == 0 || sAngle.length() == 0) {
-      Serial.print("Incomplete command after '");
-      Serial.print(t0);
-      Serial.println("', ignoring remainder.");
+      // Incomplete command after token, ignore remainder.
       break; // stop parsing further since group is incomplete
     }
 
@@ -146,11 +145,7 @@ void parseAndEnqueueSpaceSeparated(String line) {
     int angle = sAngle.toInt();
 
     if (pulses <= 0 || speedVal == 0) {
-      Serial.print("Invalid values in command: ");
-      Serial.print(t0); Serial.print(" ");
-      Serial.print(sSpeed); Serial.print(" ");
-      Serial.print(sPulses); Serial.print(" ");
-      Serial.println(sAngle);
+      // Invalid values in command: skip
       continue;
     }
 
@@ -164,21 +159,11 @@ void parseAndEnqueueSpaceSeparated(String line) {
     c.angle = angle;
 
     if (!enqueuePulse(c)) {
-      Serial.println("Queue full. Stopping parse and not enqueuing further commands.");
+      // Queue full. Stop parsing and not enqueuing further commands.
       return;
     }
 
-    Serial.print("Enqueued: ");
-    Serial.print(c.dir);
-    Serial.print(" ");
-    Serial.print(c.speed);
-    Serial.print(" ");
-    Serial.print(c.pulses);
-    Serial.print(" ");
-    Serial.print(c.angle);
-    Serial.print("  (queue=");
-    Serial.print(qCount);
-    Serial.println(")");
+    // Enqueued -> no serial output (removed)
   }
 }
 
@@ -234,7 +219,7 @@ void setup() {
   myServo.attach(SERVO_PIN);
   myServo.write(servoCurrent);
 
-  DBG_PRINTLN("Ready!");
+  // Ready! (no serial output)
 }
 
 // ----- Interrupt for counting pulses with debounce
@@ -277,7 +262,7 @@ void stopMotor() {
   digitalWrite(M1, LOW);
   digitalWrite(M2, LOW);
   movingByPulses = false;
-  DBG_PRINTLN("Motor stopped by stopMotor()");
+  // Motor stopped (no serial output)
 }
 
 // ----- Servo movement helpers
@@ -326,14 +311,7 @@ void startMotorByPulses(char dirChar, int speedVal, int pulses, int servoAngle) 
 
   startServoMove(servoAngle);
 
-  DBG_PRINT("START move ");
-  DBG_PRINT(dirChar);
-  DBG_PRINT(" speed=");
-  DBG_PRINT(speedVal);
-  DBG_PRINT(" pulses=");
-  DBG_PRINT(pulses);
-  DBG_PRINT(" servo=");
-  DBG_PRINTLN(servoAngle);
+  // START move (no serial output)
 }
 
 // ----- Lane-change helpers (non-blocking) now use pulse commands
@@ -346,7 +324,7 @@ void startLaneChangeLeft() {
   laneState = LANE_LEFT;
   lane = 'L';
   laneChangeStart = millis();
-  Serial.println("Starting lane change: RIGHT -> LEFT (enqueued pulse)");
+  // Starting lane change (no serial output)
 }
 
 void startReturnToRightLane() {
@@ -357,7 +335,7 @@ void startReturnToRightLane() {
   parseAndEnqueueSpaceSeparated(String("f 255 3 60")); // steering right for getting back to right line
   laneState = LANE_RETURNING;
   laneChangeStart = millis(); // start timer for the return stage if desired
-  Serial.println("Returning to RIGHT lane (enqueued pulse)");
+  // Returning to right lane (no serial output)
 }
 
 void finishLaneReturn() {
@@ -365,7 +343,7 @@ void finishLaneReturn() {
   lane = 'R';
   // Optionally stop or set a safe speed
   stopMotor();
-  Serial.println("Lane return complete - back to normal handling");
+  // Lane return complete (no serial output)
 }
 
 // ----- Main loop
@@ -378,29 +356,26 @@ void loop() {
     if (work.equalsIgnoreCase("stop")) {
       clearQueue();
       stopMotor();
-      Serial.println("Motors stopped, queue cleared");
+      // Motors stopped, queue cleared (no serial output)
     }
     else if (work.startsWith("motor ")) {
       int speedValue = work.substring(6).toInt();
       setMotorSpeed(speedValue);
-      Serial.print("Motors set to speed: ");
-      Serial.println(speedValue);
+      // Motors set to speed (no serial output)
     }
     else if (work.startsWith("servo ")) {
       int angle = work.substring(6).toInt();
       if (angle < SERVO_MIN) angle = SERVO_MIN;
       if (angle > SERVO_MAX) angle = SERVO_MAX;
       startServoMove(angle);
-      Serial.print("Servo target angle: ");
-      Serial.println(angle);
+      // Servo target angle set (no serial output)
     }
     else if (work.startsWith("servo_preset ")) {
       int idx = work.substring(13).toInt();
       if (idx < 0) idx = 0;
       if (idx > 2) idx = 2;
       servoPresetIndex = idx;
-      Serial.print("Servo preset index set to ");
-      Serial.println(idx);
+      // Servo preset index set (no serial output)
     }
     else if (work.startsWith("set_preset ")) {
       String rest = work.substring(11);
@@ -410,11 +385,7 @@ void loop() {
         int val = rest.substring(spacePos + 1).toInt();
         if (idx >= 0 && idx <= 2 && val > 0) {
           servoPresets[idx] = val;
-          Serial.print("Preset ");
-          Serial.print(idx);
-          Serial.print(" updated to ");
-          Serial.print(val);
-          Serial.println(" ms/degree");
+          // Preset updated (no serial output)
         }
       }
     }
@@ -446,7 +417,7 @@ void loop() {
       servoCurrent = 90;
       servoTarget = 90;
       servoMoving = false;
-      Serial.println("Obstacle detected -> stopped and queue cleared (lane changing disabled)");
+      // Obstacle detected -> stopped and queue cleared (lane changing disabled)
     } else {
       // lane changing enabled
       // only start lane change if we are currently in NORMAL state and on the right lane
@@ -493,8 +464,7 @@ void loop() {
 
       if (servoCurrent == servoTarget) {
         servoMoving = false;
-        Serial.print("Servo reached ");
-        Serial.println(servoCurrent);
+        // Servo reached target (no serial output)
       }
     }
   }
@@ -514,10 +484,7 @@ void loop() {
 
       movingByPulses = false; // next iteration will start next queued command (if any)
 
-      Serial.print("Target pulses reached: ");
-      Serial.println(pc);
-      Serial.print("Final pulse count: ");
-      Serial.println(pc);
+      // Target pulses reached (no serial output)
     } else {
       DBG_PRINT("Pulse progress: ");
       DBG_PRINT(pc);
