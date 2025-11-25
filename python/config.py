@@ -23,7 +23,7 @@ RL_RIGHT_ROI = 0.9 # right boundary (95% of width)
 LL_TOP_ROI = 0.8
 LL_BOTTOM_ROI = 1
 LL_LEFT_ROI = 0.15
-LL_RIGHT_ROI = 0.35
+LL_RIGHT_ROI = 0.45
 
 # Crosswalk ROI (if you later want stop line detection)
 CW_TOP_ROI = 0.8
@@ -39,7 +39,7 @@ AT_RIGHT_ROI = 1.0
 
 # --- Control Gains ---
 # These are proportional gains for steering correction
-LOW_KP = 1  # smaller correction when error is small
+LOW_KP = 1 # smaller correction when error is small
 HIGH_KP = 1 # stronger correction when error is large
 
 # --- Debugging ---
