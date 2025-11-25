@@ -14,16 +14,16 @@ CAMERA_MODE = "picam"
 # Tune these for your camera placement
 
 # Right lane ROI (fraction of frame)
-RL_TOP_ROI = 0.7     # start 40% down from top
+RL_TOP_ROI = 0.8     # start 40% down from top
 RL_BOTTOM_ROI = 1  # stop at 90% of frame height
 RL_LEFT_ROI = 0.6   # left boundary (55% of width)
-RL_RIGHT_ROI = 0.9# right boundary (95% of width)
+RL_RIGHT_ROI = 0.9 # right boundary (95% of width)
 
 # Left lane ROI
-LL_TOP_ROI = 0.7
+LL_TOP_ROI = 0.8
 LL_BOTTOM_ROI = 1
-LL_LEFT_ROI = 0.1
-LL_RIGHT_ROI = 0.4
+LL_LEFT_ROI = 0.15
+LL_RIGHT_ROI = 0.35
 
 # Crosswalk ROI (if you later want stop line detection)
 CW_TOP_ROI = 0.8
@@ -39,8 +39,8 @@ AT_RIGHT_ROI = 1.0
 
 # --- Control Gains ---
 # These are proportional gains for steering correction
-LOW_KP = 1   # smaller correction when error is small
-HIGH_KP = 2 # stronger correction when error is large
+LOW_KP = 1  # smaller correction when error is small
+HIGH_KP = 1 # stronger correction when error is large
 
 # --- Debugging ---
 # If True, will draw ROIs, lane midpoints, error, etc.
@@ -52,11 +52,11 @@ BAUD_RATE = 115200
 SERIAL_TIMEOUT = 0.1
 
 # --- Servo Angle Limits ---
-MIN_SERVO_ANGLE = 20.0
-MAX_SERVO_ANGLE = 160.0
+MIN_SERVO_ANGLE = 50.0
+MAX_SERVO_ANGLE = 130.0
 
 # --- Speed Config ---
-SPEED = 230
+SPEED = 255
 
 # --- Crosswalk Setting ---
 CROSSWALK_SLEEP = 3
