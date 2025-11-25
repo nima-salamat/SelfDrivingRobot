@@ -95,9 +95,9 @@ class Robot:
                     continue
                 
                 self.control.set_angle(angle)
-                time.sleep(0.001)
+                time.sleep(0.01)
                 self.control.set_speed(SPEED)  
-                time.sleep(0.001)
+                time.sleep(0.01)
 
         except KeyboardInterrupt:
             logger.error("error KeyboardInterrupt")
