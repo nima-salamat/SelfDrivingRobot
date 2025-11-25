@@ -3,8 +3,9 @@ from config import (
     RL_TOP_ROI, RL_BOTTOM_ROI, RL_RIGHT_ROI, RL_LEFT_ROI,
     LL_TOP_ROI, LL_BOTTOM_ROI, LL_RIGHT_ROI, LL_LEFT_ROI,
     CW_TOP_ROI, CW_BOTTOM_ROI, CW_RIGHT_ROI, CW_LEFT_ROI,
-    DEBUG, LOW_KP, HIGH_KP, MAX_SERVO_ANGLE, MIN_SERVO_ANGLE
+    LOW_KP, HIGH_KP, MAX_SERVO_ANGLE, MIN_SERVO_ANGLE
 )
+import config
 import cv2
 import numpy as np
 
@@ -229,7 +230,7 @@ class VisionProcessor:
         # -------------------------
         debug = {"rl_draw": None, "ll_draw": None, "combined": None, "crosswalk_draw": cw_debug}
 
-        if DEBUG:
+        if config.DEBUG:
             vis = frame.copy()
 
             # ROI boxes
