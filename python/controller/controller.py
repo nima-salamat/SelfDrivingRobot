@@ -21,9 +21,6 @@ class RobotController:
             angle = 30
         elif angle > 150:
             angle = 150
-            
-        if self.current_angle != angle:
-            self.current_angle = angle
         
         self._send_command(f"servo {angle}")
 
@@ -35,7 +32,7 @@ class RobotController:
             
         if self.current_speed != speed:
             self.current_speed = speed
-        self._send_command(f"motor 255")
+        self._send_command(f"motor {speed}")
 
     def stop(self):
         """Stop the robot"""
