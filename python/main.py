@@ -39,11 +39,13 @@ class Robot:
                 self.crosswalk_time_start = 0
 
                 # Navigate based on last tag detected
-                if self.last_tag == 0:
+                if self.last_tag == 12:
                     self.nav.right()
-                elif self.last_tag == 1:
+                elif self.last_tag == 11:
                     self.nav.left()
-                elif self.last_tag == 2:
+                elif self.last_tag == 6:
+                    pass
+                elif self.last_tag == 119:
                     self.nav.straight()
                 else:
                     self.nav.straight()
