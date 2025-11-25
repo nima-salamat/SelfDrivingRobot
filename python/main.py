@@ -1,4 +1,3 @@
-from re import DEBUG
 from vision.camera import Camera
 from vision.vision_processing import VisionProcessor
 from vision.apriltag import ApriltagDetector
@@ -66,7 +65,7 @@ class Robot:
         logger.info("starting")
         try:
             while True:
-                if DEBUG:
+                if config.DEBUG:
                     cv2.waitKey(1)
                 angle=90
                 crosswalk = False
@@ -78,10 +77,11 @@ class Robot:
                     angle = result.get("steering_angle")
             
                     crosswalk = result.get("crosswalk", False)
-                    if DEBUG:
-                        if result.get("debug").get("combined"):
-                            cv2.imshow("", result.get("debug").get("combined"))
-                        if frame:
+                    if config.DEBUG:
+                        debug = result.get("debug") or {}
+                        if debug.get("combined") is not None:
+                            cv2.imshow("combined", debug.get("combined"))
+                        if frame is not None:
                             cv2.imshow("frame", frame)
 
                 else:
@@ -90,7 +90,7 @@ class Robot:
                     self.check_crosswalk(frame)
                     continue
                 
-                if crosswalk:
+                if crosswalk and time.time() - self.crosswalk_last_seen > CROSSWALK_THRESH_SPEND:
                     self.check_crosswalk(frame)
                     self.control.stop()
                     continue
@@ -98,6 +98,7 @@ class Robot:
                 self.control.set_angle(angle)
                 time.sleep(0.001)
                 self.control.set_speed(SPEED)  
+                time.sleep(0.001)
 
         except KeyboardInterrupt:
             logger.error("error KeyboardInterrupt")
