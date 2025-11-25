@@ -111,15 +111,18 @@ class Camera:
                 if not ret or frame is None:
                     logger.warning("OpenCV camera returned no frame")
                     return None
-            if resize:
-                # Resize and convert if necessary
-                if frame.shape[:2] != (self.height, self.width):
-                    frame = cv2.resize(frame, (self.width, self.height), interpolation=cv2.INTER_AREA)
+                
                 
             # Ensure frame is in BGR format for OpenCV
             if len(frame.shape) == 3 and frame.shape[2] == 3:
                 if self.pi_mode:  # Picamera2 returns RGB, convert to BGR
                     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            
+            if resize:
+                # Resize and convert if necessary
+                if frame.shape[:2] != (self.height, self.width):
+                    frame = cv2.resize(frame, (self.width, self.height), interpolation=cv2.INTER_AREA)
+                
             
             return frame
 
