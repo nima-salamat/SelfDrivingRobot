@@ -97,7 +97,7 @@ class VisionProcessor:
                     elif angle > 60:
                         vertical += 1
             
-            if vertical > 3 and horizontal > 3:
+            if vertical > 2 and horizontal > 2:
                 crosswalk = True
 
 

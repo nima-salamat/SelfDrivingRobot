@@ -26,12 +26,11 @@ class Robot:
         
     def check_crosswalk(self, frame):
         now = time.time()
-        if now - self.crosswalk_last_seen> CROSSWALK_THRESH_SPEND:
+        if now - self.crosswalk_last_seen>= CROSSWALK_THRESH_SPEND:
             # Only reset the crosswalk timer if it's not already running
-            if self.crosswalk_time_start == 0:
-                self.crosswalk_time_start = now
-                self.crosswalk_last_seen = now
-                return True
+            self.crosswalk_time_start = now
+            self.crosswalk_last_seen = now
+            return True
 
         # If crosswalk timer is running, check for elapsed time
         if self.crosswalk_time_start != 0:
@@ -69,7 +68,7 @@ class Robot:
                     cv2.waitKey(1)
                 angle=90
                 crosswalk = False
-                if self.crosswalk_time_start == 0:
+                if self.crosswalk_time_start == 0: # 3 sec
                     frame = self.camera.capture_frame()
                     
                     result = self.vision.detect(frame)
@@ -84,13 +83,13 @@ class Robot:
                         if frame is not None:
                             cv2.imshow("frame", frame)
 
-                else:
+                else: # not 3 sec
                     frame = self.camera.capture_frame(resize=False)
                     self.control.stop()
                     self.check_crosswalk(frame)
                     continue
                 
-                if crosswalk and time.time() - self.crosswalk_last_seen > CROSSWALK_THRESH_SPEND:
+                if crosswalk and time.time() - self.crosswalk_last_seen >= CROSSWALK_THRESH_SPEND:
                     self.check_crosswalk(frame)
                     self.control.stop()
                     continue
