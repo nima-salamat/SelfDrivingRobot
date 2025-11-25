@@ -16,8 +16,8 @@ CAMERA_MODE = "picam"
 # Right lane ROI (fraction of frame)
 RL_TOP_ROI = 0.8     # start 40% down from top
 RL_BOTTOM_ROI = 1  # stop at 90% of frame height
-RL_LEFT_ROI = 0.6   # left boundary (55% of width)
-RL_RIGHT_ROI = 0.9 # right boundary (95% of width)
+RL_LEFT_ROI = 0.7   # left boundary (55% of width)
+RL_RIGHT_ROI = 1 # right boundary (95% of width)
 
 # Left lane ROI
 LL_TOP_ROI = 0.8
@@ -39,8 +39,8 @@ AT_RIGHT_ROI = 1.0
 
 # --- Control Gains ---
 # These are proportional gains for steering correction
-LOW_KP = 1 # smaller correction when error is small
-HIGH_KP = 1 # stronger correction when error is large
+LOW_KP = .7 # smaller correction when error is small
+HIGH_KP = 1.1 # stronger correction when error is large
 
 # --- Debugging ---
 # If True, will draw ROIs, lane midpoints, error, etc.
@@ -52,8 +52,8 @@ BAUD_RATE = 115200
 SERIAL_TIMEOUT = 0.1
 
 # --- Servo Angle Limits ---
-MIN_SERVO_ANGLE = 50.0
-MAX_SERVO_ANGLE = 130.0
+MIN_SERVO_ANGLE = 30.0
+MAX_SERVO_ANGLE = 150.0
 
 # --- Speed Config ---
 SPEED = 255
