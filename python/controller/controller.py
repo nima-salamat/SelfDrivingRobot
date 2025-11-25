@@ -56,10 +56,10 @@ class RobotController:
         self.motor(-abs(speed))
         
     def forward_pulse(self, speed, pulse, servo):
-        self._send_command(f"F {speed} {pulse} {servo}")
+        self._send_command(f"f {speed} {pulse} {servo}")
     
     def backward_pulse(self, speed, pulse, servo):
-        self._send_command(f"B {speed} {pulse} {servo}")
+        self._send_command(f"b {speed} {pulse} {servo}")
         
     
     
