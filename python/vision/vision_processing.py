@@ -58,7 +58,7 @@ class VisionProcessor:
             roi_copy = roi.copy()
             gray = cv2.cvtColor(roi_copy, cv2.COLOR_BGR2GRAY)
             gray = cv2.GaussianBlur(gray, (5, 5), 0)
-            _, gray = cv2.threshold(gray, 180, 255, cv2.THRESH_BINARY)
+            _, gray = cv2.threshold(gray, 230, 255, cv2.THRESH_BINARY)
             edges = cv2.Canny(gray, 50, 100)
             lines = cv2.HoughLinesP(edges, 3, np.pi / 180, 50, minLineLength=20, maxLineGap=5)
             return roi_copy, edges, lines
@@ -77,7 +77,7 @@ class VisionProcessor:
             cw_gray = cv2.cvtColor(cw_frame, cv2.COLOR_BGR2GRAY)
 
             # Use a slightly adaptive strategy: try high fixed threshold first; if too dark, fallback to adaptive
-            _, cw_bin = cv2.threshold(cw_gray, 220, 255, cv2.THRESH_BINARY)
+            _, cw_bin = cv2.threshold(cw_gray, 230, 255, cv2.THRESH_BINARY)
             if np.count_nonzero(cw_bin) < 10:  # fallback if threshold produces nearly-empty result
                 cw_bin = cv2.adaptiveThreshold(cw_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                                cv2.THRESH_BINARY, 11, 2)
