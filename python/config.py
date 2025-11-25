@@ -52,8 +52,8 @@ BAUD_RATE = 115200
 SERIAL_TIMEOUT = 0.1
 
 # --- Servo Angle Limits ---
-MIN_SERVO_ANGLE = 0.0
-MAX_SERVO_ANGLE = 180.0
+MIN_SERVO_ANGLE = 20.0
+MAX_SERVO_ANGLE = 160.0
 
 # --- Speed Config ---
 SPEED = 230

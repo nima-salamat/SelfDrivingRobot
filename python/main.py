@@ -79,8 +79,10 @@ class Robot:
             
                     crosswalk = result.get("crosswalk", False)
                     if DEBUG:
-                        cv2.imshow("", result.get("debug").get("combined"))
-                        cv2.imshow("frame", frame)
+                        if result.get("debug").get("combined"):
+                            cv2.imshow("", result.get("debug").get("combined"))
+                        if frame:
+                            cv2.imshow("frame", frame)
 
                 else:
                     frame = self.camera.capture_frame(resize=False)
