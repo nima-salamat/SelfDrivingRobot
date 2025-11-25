@@ -55,11 +55,9 @@ class RobotController:
             speed = self.current_speed if self.current_speed < 0 else -150
         self.motor(-abs(speed))
         
-    def forward_pulse(self, speed, pulse, servo):
-        self._send_command(f"f {speed} {pulse} {servo}")
+    def forward_pulse(self,s):
+        self._send_command(s)
     
-    def backward_pulse(self, speed, pulse, servo):
-        self._send_command(f"b {speed} {pulse} {servo}")
-        
-    
+    def backward_pulse(self, s):
+        self._send_command(s)
     
