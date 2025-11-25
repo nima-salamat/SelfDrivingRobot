@@ -94,7 +94,7 @@ class Robot:
                     continue
                 
                 self.control.set_angle(angle)
-                # idk should i send speed too?
+                time.sleep(0.001)
                 self.control.set_speed(SPEED)  
 
         except KeyboardInterrupt:

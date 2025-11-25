@@ -39,8 +39,8 @@ AT_RIGHT_ROI = 1.0
 
 # --- Control Gains ---
 # These are proportional gains for steering correction
-LOW_KP = 0.4   # smaller correction when error is small
-HIGH_KP = 0.8 # stronger correction when error is large
+LOW_KP = 1   # smaller correction when error is small
+HIGH_KP = 2 # stronger correction when error is large
 
 # --- Debugging ---
 # If True, will draw ROIs, lane midpoints, error, etc.
