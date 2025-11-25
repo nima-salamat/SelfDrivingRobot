@@ -57,10 +57,14 @@ class VisionProcessor:
                 return None, None, None
             roi_copy = roi.copy()
             gray = cv2.cvtColor(roi_copy, cv2.COLOR_BGR2GRAY)
-            gray = cv2.GaussianBlur(gray, (5, 5), 0)
             _, gray = cv2.threshold(gray, 230, 255, cv2.THRESH_BINARY)
+            gray = cv2.GaussianBlur(gray, (5, 5), 0)
+        
             edges = cv2.Canny(gray, 50, 100)
-            lines = cv2.HoughLinesP(edges, 3, np.pi / 180, 50, minLineLength=20, maxLineGap=5)
+        
+            lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=20,
+                        minLineLength=5, maxLineGap=5)
+
             return roi_copy, edges, lines
 
         rl_draw, rl_edge, rl_lines = process_roi(rl_frame)
@@ -73,118 +77,31 @@ class VisionProcessor:
         cw_debug = None
 
         if cw_frame is not None:
-            # Preprocess cw ROI
-            cw_gray = cv2.cvtColor(cw_frame, cv2.COLOR_BGR2GRAY)
+            gray = cv2.cvtColor(cw_frame, cv2.COLOR_BGR2GRAY)
+            _, gray = cv2.threshold(gray, 230, 255, cv2.THRESH_BINARY)
+            gray = cv2.GaussianBlur(gray, (5, 5), 0)
+            edges = cv2.Canny(gray, 50, 100)
+            lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=20,
+                        minLineLength=5, maxLineGap=5)
 
-            # Use a slightly adaptive strategy: try high fixed threshold first; if too dark, fallback to adaptive
-            _, cw_bin = cv2.threshold(cw_gray, 230, 255, cv2.THRESH_BINARY)
-            if np.count_nonzero(cw_bin) < 10:  # fallback if threshold produces nearly-empty result
-                cw_bin = cv2.adaptiveThreshold(cw_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                               cv2.THRESH_BINARY, 11, 2)
+            vertical = 0
+            horizontal = 0
+            if lines is not None:
+                for line in lines:
+                    x0, y0, x1, y1 = line[0]
+                    slope = (y1 - y0) / (x1 - x0 + 1e-6)
+                    angle = abs(np.arctan(slope) * 180 / np.pi)
 
-            # Morphological clean
-            kernel = np.ones((5, 5), np.uint8)
-            cw_bin = cv2.morphologyEx(cw_bin, cv2.MORPH_CLOSE, kernel)
-            cw_bin = cv2.morphologyEx(cw_bin, cv2.MORPH_OPEN, kernel)
+                    if angle < 30:
+                        horizontal += 1
+                    elif angle > 60:
+                        vertical += 1
+            
+            if vertical > 3 and horizontal > 3:
+                crosswalk = True
 
-            # Create LSD and detect lines on the binary (or grayscale) image
-            try:
-                lsd = cv2.createLineSegmentDetector(0)
-                # LSD expects a gray image (float or 8u); pass cw_bin to emphasize stripes
-                lsd_lines = lsd.detect(cw_bin)[0]  # returns tuple (lines, width, prec, nfa)
-            except Exception:
-                # If createLineSegmentDetector not available or fails, fallback to Hough
-                lsd_lines = None
 
-            cw_draw = cv2.cvtColor(cw_bin, cv2.COLOR_GRAY2BGR)
-
-            # collect useful lines
-            detected_lines = []
-            if lsd_lines is not None:
-                # lsd_lines can have shapes (N,1,4) or (N,4)
-                for l in lsd_lines:
-                    coords = l.reshape(-1)  # flatten
-                    if coords.size >= 4:
-                        x1, y1, x2, y2 = coords[:4]
-                        length = math.hypot(x2 - x1, y2 - y1)
-                        if length < 15:  # ignore very short segments
-                            continue
-                        detected_lines.append((float(x1), float(y1), float(x2), float(y2), length))
-
-            # If no LSD lines found, fallback to HoughLinesP on cw_bin edges
-            if not detected_lines:
-                edges = cv2.Canny(cw_bin, 50, 150)
-                lines_p = cv2.HoughLinesP(edges, 3, np.pi/180, 30, minLineLength=20, maxLineGap=10)
-                if lines_p is not None:
-                    for line in lines_p:
-                        x1,y1,x2,y2 = line[0]
-                        length = math.hypot(x2-x1, y2-y1)
-                        if length < 15:
-                            continue
-                        detected_lines.append((float(x1), float(y1), float(x2), float(y2), length))
-
-            # analyze orientations
-            angles = []
-            for (x1,y1,x2,y2,le) in detected_lines:
-                angle = math.degrees(math.atan2((y2-y1), (x2-x1+1e-9)))
-                # normalize to [-90,90]
-                if angle <= -90:
-                    angle += 180
-                if angle > 90:
-                    angle -= 180
-                angles.append(angle)
-
-            # count horizontal vs vertical-like lines
-            angle_tol = 20  # degrees tolerance for grouping
-            horizontal_lines = []
-            vertical_lines = []
-            for i, (x1,y1,x2,y2,le) in enumerate(detected_lines):
-                a = angles[i]
-                if abs(a) <= angle_tol:  # near 0 deg -> horizontal
-                    horizontal_lines.append((x1,y1,x2,y2,le,a))
-                if abs(abs(a) - 90) <= angle_tol:  # near +-90 deg -> vertical
-                    vertical_lines.append((x1,y1,x2,y2,le,a))
-
-            # choose dominant orientation (crosswalk stripes commonly horizontal across image)
-            dominant = 'horizontal' if len(horizontal_lines) >= len(vertical_lines) else 'vertical'
-            candidate_lines = horizontal_lines if dominant == 'horizontal' else vertical_lines
-
-            # draw all detected lines faintly
-            for (x1,y1,x2,y2,le) in detected_lines:
-                cv2.line(cw_draw, (int(x1), int(y1)), (int(x2), int(y2)), (60,60,60), 1)
-
-            # highlight candidate lines and collect midpoints
-            midpoints = []
-            for (x1,y1,x2,y2,le,a) in candidate_lines:
-                cv2.line(cw_draw, (int(x1), int(y1)), (int(x2), int(y2)), (0,255,255), 2)
-                mx = (x1 + x2) / 2.0
-                my = (y1 + y2) / 2.0
-                midpoints.append((mx,my))
-
-            # simple heuristic: if we have >= min_stripes candidate parallel segments -> crosswalk
-            min_stripes = 3
-            if len(candidate_lines) >= min_stripes:
-                # additional spacing check: ensure midpoints are not all clustered
-                if dominant == 'horizontal':
-                    ys = sorted([int(p[1]) for p in midpoints])
-                    # require at least 3 distinct y positions with minimum spacing (in pixels)
-                    distinct = 1
-                    for i in range(1, len(ys)):
-                        if abs(ys[i] - ys[i-1]) > max(5, int((cw_bottom-cw_top)*0.03)):
-                            distinct += 1
-                    if distinct >= 3:
-                        crosswalk = True
-                else:  # vertical
-                    xs = sorted([int(p[0]) for p in midpoints])
-                    distinct = 1
-                    for i in range(1, len(xs)):
-                        if abs(xs[i] - xs[i-1]) > max(5, int((cw_right-cw_left)*0.03)):
-                            distinct += 1
-                    if distinct >= 3:
-                        crosswalk = True
-
-            cw_debug = cw_draw
-
+                            
         # -------------------------
         # LANE MIDPOINT (unchanged)
         # -------------------------
@@ -194,16 +111,19 @@ class VisionProcessor:
         rl_x_mid_full = (rl_left + rl_x_mid) if rl_x_mid is not None else None
         ll_x_mid_full = (ll_left + ll_x_mid) if ll_x_mid is not None else None
 
+        frame_center = (width * (RL_RIGHT_ROI + LL_LEFT_ROI) / 2)
         if (rl_x_mid_full is not None) and (ll_x_mid_full is not None):
             lane_type = "both"
         elif (rl_x_mid_full is None) and (ll_x_mid_full is not None):
             lane_type = "only_left"
+            frame_center = (width * (RL_RIGHT_ROI + LL_LEFT_ROI) / 2) - 20
         elif (rl_x_mid_full is not None) and (ll_x_mid_full is None):
             lane_type = "only_right"
+            # frame_center = (width * (RL_RIGHT_ROI + LL_LEFT_ROI) / 2) - 20
         else:
             lane_type = "none"
 
-        frame_center = (width * (RL_RIGHT_ROI + LL_LEFT_ROI) / 2) + 5
+        
 
         rl_roi_center = (rl_left + rl_right) / 2.0
         ll_roi_center = (ll_left + ll_right) / 2.0
@@ -218,9 +138,9 @@ class VisionProcessor:
         else:
             lane_center = frame_center
 
-        error = lane_center - frame_center
+        error = frame_center - lane_center
         kp = LOW_KP if abs(error) < 25 else HIGH_KP
-        steering_angle = 90.0 + kp * error
+        steering_angle = 90.0 - kp * error
         if lane_type == "none":
             steering_angle = 150
         steering_angle = int(max(MIN_SERVO_ANGLE, min(MAX_SERVO_ANGLE, steering_angle)))
@@ -267,12 +187,12 @@ class VisionProcessor:
             # crosswalk text and paste cw_debug into the cw ROI for inspection
             cv2.putText(vis, f"crosswalk:{crosswalk}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,255), 2)
 
-            if cw_debug is not None:
-                try:
-                    vis[cw_top:cw_bottom, cw_left:cw_right] = cv2.resize(cw_debug, (cw_right - cw_left, cw_bottom - cw_top))
-                except Exception:
-                    # if paste fails, ignore (still keep vis)
-                    pass
+            # if cw_debug is not None:
+            #     try:
+            #         vis[cw_top:cw_bottom, cw_left:cw_right] = cv2.resize(cw_debug, (cw_right - cw_left, cw_bottom - cw_top))
+            #     except Exception:
+            #         # if paste fails, ignore (still keep vis)
+            #         pass
 
             debug["rl_draw"] = rl_draw
             debug["ll_draw"] = ll_draw
