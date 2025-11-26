@@ -113,6 +113,7 @@ class Robot:
 
         except KeyboardInterrupt:
             logger.error("error KeyboardInterrupt")
+            
         except Exception as e:
             logger.error(f"error {e}")
             print(e)
@@ -123,6 +124,8 @@ class Robot:
             
     
     def close(self):
+        self.control.stop()
+        self.control.set_angle(90)
         self.camera.release()
         cv2.destroyAllWindows()
         
