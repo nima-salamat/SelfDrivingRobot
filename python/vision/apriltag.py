@@ -23,6 +23,9 @@ class ApriltagDetector:
         Returns:
         - List of detected tags, each containing the tag ID and the bounding box coordinates.
         """
+        if frame is None or frame.size == 0:
+            return []
+
         # Convert frame to grayscale for ArUco detection
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         
@@ -32,7 +35,8 @@ class ApriltagDetector:
         detected_tags = []
         
         # If any markers are detected
-        if len(corners) > 0:
+        if ids is not None and len(corners) > 0:
+            height, width = frame.shape[:2]
             for i in range(len(corners)):
                 # Get the corner coordinates of the marker
                 corner = corners[i][0]
@@ -43,8 +47,15 @@ class ApriltagDetector:
                 min_y = min(corner[:, 1])
                 max_y = max(corner[:, 1])
 
-                # Check if the marker's bounding box is within the defined ROI
-                if AT_LEFT_ROI <= min_x / frame.shape[1] <= AT_RIGHT_ROI and AT_TOP_ROI <= min_y / frame.shape[0] <= AT_BOTTOM_ROI:
+                # Normalize to [0, 1] range
+                min_x_norm = min_x / width
+                max_x_norm = max_x / width
+                min_y_norm = min_y / height
+                max_y_norm = max_y / height
+
+                # Check if the entire bounding box is within the defined ROI
+                if (AT_LEFT_ROI <= min_x_norm and max_x_norm <= AT_RIGHT_ROI and
+                    AT_TOP_ROI <= min_y_norm and max_y_norm <= AT_BOTTOM_ROI):
                     detected_tags.append({
                         'id': ids[i][0],  # Tag ID
                         'corners': corner,
