@@ -47,7 +47,6 @@ class VisionProcessor:
 
         rl_frame = rl_frame if (rl_frame is not None and rl_frame.size != 0) else None
         ll_frame = ll_frame if (ll_frame is not None and ll_frame.size != 0) else None
-        cw_frame = cw_frame if (cw_frame is not None and cw_frame.size != 0) else None
 
         # --- Process ROI: gray -> blur -> edges -> HoughLinesP ---
         def process_roi(roi):
