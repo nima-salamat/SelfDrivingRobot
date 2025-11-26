@@ -11,12 +11,13 @@ import time
 logging.disable(logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-config.DEBUG = True
+config.DEBUG = False
 
 class Robot:
     def __init__(self):
         self.camera = Camera()
         self.control = RobotController()
+
         self.vision = VisionProcessor()
         self.apriltag_detector = ApriltagDetector()
         self.nav = Navigate(self.control)
@@ -37,18 +38,27 @@ class Robot:
             elapsed = now - self.crosswalk_time_start
             if elapsed >= CROSSWALK_SLEEP:
                 self.crosswalk_time_start = 0
-
+           
                 # Navigate based on last tag detected
                 if self.last_tag == 12:
-                    self.nav.right()
+                     time.sleep(0.1)
+                     self.control.forward_pulse(f"f {SPEED} 5 90 f {SPEED} 5 140")
+                     time.sleep(0.1)
                 elif self.last_tag == 11:
-                    self.nav.left()
+                    time.sleep(0.1)
+                    self.control.forward_pulse(f"f {SPEED} 7 90 f {SPEED} 5 40")
+                    time.sleep(0.1)
                 elif self.last_tag == 6:
                     pass
                 elif self.last_tag == 119:
-                    self.nav.straight()
+                    time.sleep(0.1)
+                    self.control.forward_pulse(f"f {SPEED} 10 90")
+                    time.sleep(0.1)
                 else:
-                    self.nav.straight()
+                    time.sleep(0.1)
+                    self.control.forward_pulse(f"f {SPEED} 10 90")
+                    time.sleep(0.1)
+
 
             else:
                 # Attempt to read AprilTag while the timer is running
