@@ -85,10 +85,10 @@ class VisionProcessor:
             lane_type = "both"
         elif (rl_x_mid_full is None) and (ll_x_mid_full is not None):
             lane_type = "only_left"
-            frame_center = (width * (RL_RIGHT_ROI + LL_LEFT_ROI) / 2) - 20
+            frame_center = (width * (RL_RIGHT_ROI + LL_LEFT_ROI) / 2) - 20 
         elif (rl_x_mid_full is not None) and (ll_x_mid_full is None):
             lane_type = "only_right"
-            # frame_center = (width * (RL_RIGHT_ROI + LL_LEFT_ROI) / 2) - 20
+            #frame_center = (width * (RL_RIGHT_ROI + LL_LEFT_ROI) / 2)
         else:
             lane_type = "none"
 
