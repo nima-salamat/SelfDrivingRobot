@@ -77,11 +77,14 @@ class Robot:
                     crosswalk = result.get("crosswalk", False)
 
                     tags, frame_at = self.apriltag_detector.detect(frame_at)
-                    if tags:
-                        first_tag = tags[0]
-                        tag_id = first_tag["id"]
-                        self.last_tag = tag_id
-                    
+                    if isinstance(tags, list) and len(tags) > 0:
+                        tag = tags[0]
+                        if isinstance(tag, dict):
+                            if "id" in tag:
+                                tag_id = tag["id"]
+                                if isinstance(tag_id, int):
+                                    self.last_tag = tag_id
+                
                     if config.DEBUG:
                         debug = result.get("debug") or {}
                         if debug.get("combined") is not None:
