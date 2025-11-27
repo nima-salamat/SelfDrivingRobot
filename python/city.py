@@ -91,6 +91,8 @@ class Robot:
                             cv2.imshow("combined", debug.get("combined"))
                         if frame is not None:
                             cv2.imshow("frame", frame)
+                        if frame_at is not None:
+                            cv2.imshow("at", frame_at)
 
                 else: # not 3 sec
                     self.control.stop()
