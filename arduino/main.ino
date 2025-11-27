@@ -228,7 +228,7 @@ void startMotorByPulses(char dirChar, int speedVal, int pulses, int servoAngle) 
 void startLaneChangeLeft() {
   if (laneState != LANE_NORMAL) return;
   clearQueue();
-  parseAndEnqueueSpaceSeparated(String("b 255 4 50 b 255 4 130"));
+  parseAndEnqueueSpaceSeparated(String("b 255 4 50 b 255 3 130"));
   laneState = LANE_LEFT;
   lane = 'L';
   laneChangeStart = millis();
@@ -320,7 +320,7 @@ after_serial_processing:
       startReturnToRightLane();
     }
   } else if (laneState == LANE_RETURNING) {
-    if (millis() - laneChangeStart >= 10000UL) {
+    if (millis() - laneChangeStart >= 1000UL) {
       finishLaneReturn();
     }
   }
