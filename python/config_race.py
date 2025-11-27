@@ -17,7 +17,7 @@ CAMERA_MODE = "picam"
 RL_TOP_ROI = 0.8   # start 40% down from top
 RL_BOTTOM_ROI = 1  # stop at 90% of frame height
 RL_LEFT_ROI = 0.7   # left boundary (55% of width)
-RL_RIGHT_ROI = 1.0 # right boundary (95% of width)
+RL_RIGHT_ROI = 1 # right boundary (95% of width)
 
 # Left lane ROI
 LL_TOP_ROI = 0.8

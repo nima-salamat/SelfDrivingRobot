@@ -31,7 +31,7 @@ class Robot:
                     cv2.waitKey(1)
                 frame_at = self.camera.capture_frame(resize=False)
             
-                frame = cv2.resize(frame_at, (default_height, default_width), interpolation=cv2.INTER_AREA)
+                frame = cv2.resize(frame_at, (default_width, default_height), interpolation=cv2.INTER_AREA)
                 
                 
                 result = self.vision.detect(frame)
