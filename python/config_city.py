@@ -28,13 +28,13 @@ LL_RIGHT_ROI = 0.5
 # Crosswalk ROI (if you later want stop line detection)
 CW_TOP_ROI = 0.8
 CW_BOTTOM_ROI = 1.0
-CW_LEFT_ROI = 0.3
-CW_RIGHT_ROI = 0.7
+CW_LEFT_ROI = 0.1
+CW_RIGHT_ROI = 0.9
 
 # Apriltag ROI
 AT_TOP_ROI = 0.0
-AT_BOTTOM_ROI = 0.2
-AT_LEFT_ROI = 0.8
+AT_BOTTOM_ROI = 0.4
+AT_LEFT_ROI = 0.7
 AT_RIGHT_ROI = 1.0
 
 # --- Control Gains ---
