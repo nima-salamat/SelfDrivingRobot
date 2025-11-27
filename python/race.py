@@ -1,8 +1,8 @@
 from vision.camera import Camera
 from vision.race_vision_processing import VisionProcessor
-from vision.apriltag import ApriltagDetector
+from vision.at_race import ApriltagDetector
 from controller import RobotController
-from config_race import SPEED, CROSSWALK_SLEEP, CROSSWALK_THRESH_SPEND
+from config_race import SPEED, CROSSWALK_SLEEP, CROSSWALK_THRESH_SPEND, default_height, default_width
 import config_race
 import logging
 import cv2
@@ -16,30 +16,56 @@ class Robot:
     def __init__(self):
         self.camera = Camera()
         self.control = RobotController()
-
         self.vision = VisionProcessor()
         self.apriltag_detector = ApriltagDetector()
+        self.stop_last_seen = None
+        
 
     def run(self):
         logger.info("starting")
         try:
+            
             while True:
+                tag = False
                 if config_race.DEBUG:
                     cv2.waitKey(1)
+                frame_at = self.camera.capture_frame(resize=False)
             
-                frame = self.camera.capture_frame()
+                frame = cv2.resize(frame_at, (default_height, default_width), interpolation=cv2.INTER_AREA)
+                
                 
                 result = self.vision.detect(frame)
-
+                
+                
                 angle = result.get("steering_angle")
-        
+                tags, frame_at = self.apriltag_detector.detect(frame_at)
+
+                
+                if isinstance(tags, list) and len(tags) > 0:
+                        tag = tags[0]
+                        if isinstance(tag, dict):
+                            if "id" in tag:
+                                tag_id = tag["id"]
+                                if isinstance(tag_id, int):
+                                    if tag_id == 6:
+                                        is_stop = True
+                                        self.stop_last_seen = time.time()
+                                    
+                                    
                 if config_race.DEBUG:
                     debug = result.get("debug") or {}
                     if debug.get("combined") is not None:
                         cv2.imshow("combined", debug.get("combined"))
                     if frame is not None:
                             cv2.imshow("frame", frame)
-
+                
+                if tag or (self.stop_last_seen is not None and time.time() - self.stop_last_seen <= 1):
+                    self.control.stop()
+                    continue
+                else:
+                    
+                    self.stop_last_seen = None
+                
                 
                 self.control.set_angle(angle)
                 time.sleep(0.01)
