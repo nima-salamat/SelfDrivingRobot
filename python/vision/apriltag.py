@@ -1,6 +1,6 @@
 import cv2
 from cv2 import aruco
-from base_config import AT_TOP_ROI, AT_BOTTOM_ROI, AT_LEFT_ROI, AT_RIGHT_ROI
+from config_city import AT_TOP_ROI, AT_BOTTOM_ROI, AT_LEFT_ROI, AT_RIGHT_ROI
 import logging
 
 logger = logging.getLogger(__name__)
