@@ -14,22 +14,22 @@ CAMERA_MODE = "picam"
 # Tune these for your camera placement
 
 # Right lane ROI (fraction of frame)
-RL_TOP_ROI = 0.8     # start 40% down from top
+RL_TOP_ROI = 0.8   # start 40% down from top
 RL_BOTTOM_ROI = 1  # stop at 90% of frame height
 RL_LEFT_ROI = 0.7   # left boundary (55% of width)
-RL_RIGHT_ROI = 1 # right boundary (95% of width)
+RL_RIGHT_ROI = 1.0 # right boundary (95% of width)
 
 # Left lane ROI
 LL_TOP_ROI = 0.8
 LL_BOTTOM_ROI = 1
-LL_LEFT_ROI = 0.15
-LL_RIGHT_ROI = 0.45
+LL_LEFT_ROI = 0.2
+LL_RIGHT_ROI = 0.5
 
 # Crosswalk ROI (if you later want stop line detection)
 CW_TOP_ROI = 0.8
 CW_BOTTOM_ROI = 1.0
-CW_LEFT_ROI = 0.3
-CW_RIGHT_ROI = 0.7
+CW_LEFT_ROI = 0.1
+CW_RIGHT_ROI = 0.4
 
 # Apriltag ROI
 AT_TOP_ROI = 0.0
@@ -39,8 +39,8 @@ AT_RIGHT_ROI = 1.0
 
 # --- Control Gains ---
 # These are proportional gains for steering correction
-LOW_KP = .5 # smaller correction when error is small
-HIGH_KP = 1.0 # stronger correction when error is large
+LOW_KP = 0.5 # smaller correction when error is small
+HIGH_KP = 0.7 # stronger correction when error is large
 
 # --- Debugging ---
 # If True, will draw ROIs, lane midpoints, error, etc.

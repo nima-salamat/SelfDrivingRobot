@@ -54,14 +54,15 @@ class VisionProcessor:
                 return None, None, None
             roi_copy = roi.copy()
             gray = cv2.cvtColor(roi_copy, cv2.COLOR_BGR2GRAY)
-            _, gray = cv2.threshold(gray, 230, 255, cv2.THRESH_BINARY)
-            gray = cv2.GaussianBlur(gray, (5, 5), 0)
+            _, gray = cv2.threshold(gray, 245, 255, cv2.THRESH_BINARY)
+        
+            #gray = cv2.GaussianBlur(gray, (9, 9), 0)
             # Step 3: Apply dilation to thicken the edges
-            dilated_image = cv2.dilate(gray, None, iterations=1)
+            #dilated_image = cv2.dilate(gray, None, iterations=1)
 
             # Step 4: Apply erosion to refine the edges
-            eroded_image = cv2.erode(dilated_image, None, iterations=1)
-            edges = cv2.Canny(eroded_image, 50, 100)
+            #eroded_image = cv2.erode(dilated_image, None, iterations=1)
+            edges = cv2.Canny(gray, 100, 150)
         
             lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=20,
                         minLineLength=5, maxLineGap=5)
