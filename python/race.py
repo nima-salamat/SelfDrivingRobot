@@ -19,7 +19,6 @@ class Robot:
         self.vision = VisionProcessor()
         self.apriltag_detector = ApriltagDetector()
         self.stop_last_seen = None
-        
 
     def run(self):
         logger.info("starting")
@@ -47,7 +46,7 @@ class Robot:
                             if "id" in tag:
                                 tag_id = tag["id"]
                                 if isinstance(tag_id, int):
-                                    if tag_id == 6:
+                                    if tag_id == 5:
                                         tag = True
                                         self.stop_last_seen = time.time()
                                     

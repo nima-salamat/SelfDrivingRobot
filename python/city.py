@@ -2,7 +2,7 @@ from vision.camera import Camera
 from vision.city_vision_processing import VisionProcessor
 from vision.apriltag import ApriltagDetector
 from controller import RobotController
-from config_city import SPEED, CROSSWALK_SLEEP, CROSSWALK_THRESH_SPEND
+from config_city import SPEED, CROSSWALK_SLEEP, CROSSWALK_THRESH_SPEND, default_height, default_width
 import config_city 
 import logging
 import cv2
@@ -22,6 +22,7 @@ class Robot:
         self.crosswalk_time_start = 0
         self.crosswalk_last_seen = 0
         self.last_tag = None
+        self.stop_last_seen = None
         
     def check_crosswalk(self):
         now = time.time()
@@ -37,17 +38,15 @@ class Robot:
                 self.crosswalk_time_start = 0
            
                 # Navigate based on last tag detected
-                if self.last_tag == 12:
+                if self.last_tag == 2:
                      time.sleep(0.1)
                      self.control.forward_pulse(f"f {SPEED} 5 90 f {SPEED} 5 140")
                      time.sleep(0.1)
-                elif self.last_tag == 11:
+                elif self.last_tag == 3:
                     time.sleep(0.1)
                     self.control.forward_pulse(f"f {SPEED} 7 90 f {SPEED} 5 40")
                     time.sleep(0.1)
-                elif self.last_tag == 6:
-                    pass
-                elif self.last_tag == 119:
+                elif self.last_tag == 4:
                     time.sleep(0.1)
                     self.control.forward_pulse(f"f {SPEED} 10 90")
                     time.sleep(0.1)
@@ -67,7 +66,8 @@ class Robot:
                 
                 if self.crosswalk_time_start == 0: # 3 sec
                     frame_at = self.camera.capture_frame(resize=False)
-                    frame = self.camera.capture_frame(resize=True)
+
+                    frame = cv2.resize(frame_at, (default_width, default_height), interpolation=cv2.INTER_AREA)
 
                     
                     result = self.vision.detect(frame)
@@ -84,8 +84,15 @@ class Robot:
                                 tag_id = tag["id"]
                                 if isinstance(tag_id, int):
                                     self.last_tag = tag_id
+                                    tag = True
+                                    self.stop_last_seen = time.time()
+                                    
+                    if tag or (self.stop_last_seen is not None and time.time() - self.stop_last_seen <= 1):
+                        self.control.stop()
+                        time.sleep(0.01)
+                        continue
                 
-                    if config_city.DEBUG:
+                    if config_city.DEBUG: 
                         debug = result.get("debug") or {}
                         if debug.get("combined") is not None:
                             cv2.imshow("combined", debug.get("combined"))
@@ -99,6 +106,7 @@ class Robot:
                     time.sleep(0.1)
                     self.check_crosswalk()
                     continue
+                
                 
                 if crosswalk and time.time() - self.crosswalk_last_seen >= CROSSWALK_THRESH_SPEND:
                     self.check_crosswalk()
