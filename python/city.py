@@ -59,6 +59,7 @@ class Robot:
         logger.info("starting")
         try:
             while True:
+                tag = False
                 if config_city.DEBUG:
                     cv2.waitKey(1)
                 angle=90

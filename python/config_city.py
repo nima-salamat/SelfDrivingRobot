@@ -32,9 +32,9 @@ CW_LEFT_ROI = 0.3
 CW_RIGHT_ROI = 0.9
 
 # Apriltag ROI
-AT_TOP_ROI = 0.0
-AT_BOTTOM_ROI = 0.4
-AT_LEFT_ROI = 0.6
+AT_TOP_ROI = 0.1
+AT_BOTTOM_ROI = 1
+AT_LEFT_ROI = 0.0
 AT_RIGHT_ROI = 1.0
 
 # --- Control Gains ---
