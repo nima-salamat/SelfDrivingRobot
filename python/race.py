@@ -48,7 +48,7 @@ class Robot:
                                 tag_id = tag["id"]
                                 if isinstance(tag_id, int):
                                     if tag_id == 6:
-                                        is_stop = True
+                                        tag = True
                                         self.stop_last_seen = time.time()
                                     
                                     
@@ -61,6 +61,8 @@ class Robot:
                 
                 if tag or (self.stop_last_seen is not None and time.time() - self.stop_last_seen <= 1):
                     self.control.stop()
+                    time.sleep(0.01)
+                    
                     continue
                 else:
                     
