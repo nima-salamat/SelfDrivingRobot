@@ -1,5 +1,5 @@
 from vision.camera import Camera
-from vision.vision_processing import VisionProcessor
+from vision.race_vision_processing import VisionProcessor
 from vision.apriltag import ApriltagDetector
 from controller import RobotController
 from config_city import SPEED, CROSSWALK_SLEEP, CROSSWALK_THRESH_SPEND
