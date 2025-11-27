@@ -2,15 +2,15 @@ from vision.camera import Camera
 from vision.vision_processing import VisionProcessor
 from vision.apriltag import ApriltagDetector
 from controller import RobotController
-from config import SPEED, CROSSWALK_SLEEP, CROSSWALK_THRESH_SPEND
-import config
+from config_city import SPEED, CROSSWALK_SLEEP, CROSSWALK_THRESH_SPEND
+import config_city 
 import logging
 import cv2
 import time
 logging.disable(logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-config.DEBUG = False
+config_city.DEBUG = False
 
 class Robot:
     def __init__(self):
@@ -60,7 +60,7 @@ class Robot:
         logger.info("starting")
         try:
             while True:
-                if config.DEBUG:
+                if config_city.DEBUG:
                     cv2.waitKey(1)
                 angle=90
                 crosswalk = False
@@ -85,7 +85,7 @@ class Robot:
                                 if isinstance(tag_id, int):
                                     self.last_tag = tag_id
                 
-                    if config.DEBUG:
+                    if config_city.DEBUG:
                         debug = result.get("debug") or {}
                         if debug.get("combined") is not None:
                             cv2.imshow("combined", debug.get("combined"))

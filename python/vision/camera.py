@@ -1,4 +1,4 @@
-from config import default_width, default_height, CAMERA_MODE
+from python.config_race import default_width, default_height, CAMERA_MODE
 try:
     from picamera2 import Picamera2
 except ImportError:

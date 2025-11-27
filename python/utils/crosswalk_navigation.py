@@ -1,4 +1,4 @@
-from config import SPEED
+from python.config_race import SPEED
 
 
 class Navigate:

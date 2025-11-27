@@ -1,11 +1,11 @@
 import math
-from config import (
+from config_race import (
     RL_TOP_ROI, RL_BOTTOM_ROI, RL_RIGHT_ROI, RL_LEFT_ROI,
     LL_TOP_ROI, LL_BOTTOM_ROI, LL_RIGHT_ROI, LL_LEFT_ROI,
     CW_TOP_ROI, CW_BOTTOM_ROI, CW_RIGHT_ROI, CW_LEFT_ROI,
     LOW_KP, HIGH_KP, MAX_SERVO_ANGLE, MIN_SERVO_ANGLE
 )
-import config
+import config_race
 import cv2
 import numpy as np
 
@@ -120,7 +120,7 @@ class VisionProcessor:
         # -------------------------
         debug = {"rl_draw": None, "ll_draw": None, "combined": None}
 
-        if config.DEBUG:
+        if config_race.DEBUG:
             vis = frame.copy()
 
             # ROI boxes
