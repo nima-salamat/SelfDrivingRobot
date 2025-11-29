@@ -10,7 +10,7 @@ import time
 logging.disable(logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-config_race.DEBUG = False
+config_race.DEBUG = True
 
 class Robot:
     def __init__(self):
@@ -46,9 +46,19 @@ class Robot:
                             if "id" in tag:
                                 tag_id = tag["id"]
                                 if isinstance(tag_id, int):
+                                    
                                     if tag_id == 5:
+                                      
+                                      if tags[0]["corners"][1][1] > 180:
+                                      
                                         tag = True
                                         self.stop_last_seen = time.time()
+                                        self.last_tag = tag_id
+                                        
+                                    else:
+                                    
+                                        pass
+                                    
                                     
                                     
                 if config_race.DEBUG:

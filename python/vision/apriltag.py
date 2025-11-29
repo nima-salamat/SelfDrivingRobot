@@ -33,7 +33,7 @@ class ApriltagDetector:
         gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
 
         # Adaptive/normal threshold for better tag detection
-        _, gray_thr = cv2.threshold(gray, 230, 255, cv2.THRESH_BINARY)
+        _, gray_thr = cv2.threshold(gray, 220, 255, cv2.THRESH_BINARY)
 
         # -----------------------------
         # 3) Detect markers **in ROI**
@@ -56,6 +56,7 @@ class ApriltagDetector:
                 # Convert ROI corners ? global frame coordinates
                 c_global = c.copy()
                 c_global[:, 0] += x1
+                
                 c_global[:, 1] += y1
 
                 min_x, max_x = c_global[:, 0].min(), c_global[:, 0].max()

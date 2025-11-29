@@ -36,23 +36,23 @@ class Robot:
             elapsed = now - self.crosswalk_time_start
             if elapsed >= CROSSWALK_SLEEP:
                 self.crosswalk_time_start = 0
-           
+                print(self.last_tag)
                 # Navigate based on last tag detected
                 if self.last_tag == 2:
                      time.sleep(0.1)
-                     self.control.forward_pulse(f"f {SPEED} 5 90 f {SPEED} 5 140")
+                     self.control.forward_pulse(f"f {SPEED} 5 90 f {SPEED} 4 140")
                      time.sleep(0.1)
                 elif self.last_tag == 3:
                     time.sleep(0.1)
-                    self.control.forward_pulse(f"f {SPEED} 7 90 f {SPEED} 5 40")
+                    self.control.forward_pulse(f"f {SPEED} 6 90 f {SPEED} 4 60")
                     time.sleep(0.1)
                 elif self.last_tag == 4:
                     time.sleep(0.1)
-                    self.control.forward_pulse(f"f {SPEED} 10 90")
+                    self.control.forward_pulse(f"f {SPEED} 9 95")
                     time.sleep(0.1)
                 else:
                     time.sleep(0.1)
-                    self.control.forward_pulse(f"f {SPEED} 10 90")
+                    self.control.forward_pulse(f"f {SPEED}  10 95")
                     time.sleep(0.1)
                     
     def run(self):
@@ -76,18 +76,24 @@ class Robot:
                     angle = result.get("steering_angle")
             
                     crosswalk = result.get("crosswalk", False)
-
-                    tags, frame_at = self.apriltag_detector.detect(frame_at)
+                    
+                    tags, frame_at= self.apriltag_detector.detect(frame_at)
+                    
                     if isinstance(tags, list) and len(tags) > 0:
-                        tag = tags[0]
-                        if isinstance(tag, dict):
-                            if "id" in tag:
-                                tag_id = tag["id"]
-                                if isinstance(tag_id, int):
-                                    self.last_tag = tag_id
-                                    tag = True
-                                    self.stop_last_seen = time.time()
+                        
+                        if isinstance(tags[0], dict):
+                            if "id" in tags[0]:
+                                    tag_id = tags[0]["id"]
+                                #if isinstance(tag_id, int): 
+                                    if tags[0]["corners"][1][1] > 180:
                                     
+                                        if tag_id == 5:
+                                            tag = True
+                                            self.stop_last_seen = time.time()
+
+                                        self.last_tag = tag_id
+                                    
+                                      
                     if tag or (self.stop_last_seen is not None and time.time() - self.stop_last_seen <= 1):
                         self.control.stop()
                         time.sleep(0.01)
@@ -108,7 +114,7 @@ class Robot:
                     self.check_crosswalk()
                     continue
                 
-                
+
                 if crosswalk and time.time() - self.crosswalk_last_seen >= CROSSWALK_THRESH_SPEND:
                     self.check_crosswalk()
                     self.control.stop()

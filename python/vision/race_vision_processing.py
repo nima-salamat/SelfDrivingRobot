@@ -54,8 +54,9 @@ class VisionProcessor:
                 return None, None, None
             roi_copy = roi.copy()
             gray = cv2.cvtColor(roi_copy, cv2.COLOR_BGR2GRAY)
-            _, gray = cv2.threshold(gray, 245, 255, cv2.THRESH_BINARY)
-        
+            _, gray = cv2.threshold(gray, 220, 255, cv2.THRESH_BINARY)
+            #gray = cv2.adaptiveThreshold(gray,255,cv2.ADAPTIVE_THRESH_MEAN_C,\
+              #cv2.THRESH_BINARY,11,2)
             #gray = cv2.GaussianBlur(gray, (9, 9), 0)
             # Step 3: Apply dilation to thicken the edges
             #dilated_image = cv2.dilate(gray, None, iterations=1)
