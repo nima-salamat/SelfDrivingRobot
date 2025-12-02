@@ -13,7 +13,7 @@ class ApriltagDetector:
 
     def detect(self, frame):
         if frame is None or frame.size == 0:
-            return []
+            return [], frame, None
 
         h, w = frame.shape[:2]
 
@@ -76,9 +76,20 @@ class ApriltagDetector:
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 2
                 )
 
+        max_area = 0
+        largest_tag = None
+        for i in detected_tags:
+            contour = i["corners"].reshape((-1, 1, 2))
+            area = cv2.contourArea(contour)
+            if max_area < area:
+                largest_tag = i
+                max_area = area
+            
+                
+            
         # -----------------------------
         # 5) Draw ROI box on the frame
         # -----------------------------
         cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
 
-        return detected_tags, frame
+        return detected_tags, frame, largest_tag
