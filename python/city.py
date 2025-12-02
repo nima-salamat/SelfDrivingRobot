@@ -77,22 +77,16 @@ class Robot:
             
                     crosswalk = result.get("crosswalk", False)
                     
-                    tags, frame_at= self.apriltag_detector.detect(frame_at)
+                    tags, frame_at, largest_tag = self.apriltag_detector.detect(frame_at)
                     
-                    if isinstance(tags, list) and len(tags) > 0:
-                        
-                        if isinstance(tags[0], dict):
-                            if "id" in tags[0]:
-                                    tag_id = tags[0]["id"]
-                                #if isinstance(tag_id, int): 
-                                    if tags[0]["corners"][1][1] > 180:
-                                    
-                                        if tag_id == 5:
-                                            tag = True
-                                            self.stop_last_seen = time.time()
+                    if largest_tag is not None:
+                        tag_id = largest_tag["id"]
+                        if largest_tag["corners"][1][1] > 180:  
+                            if tag_id == 5:
+                                    tag = True
+                                    self.stop_last_seen = time.time()
 
-                                        self.last_tag = tag_id
-                                    
+                            self.last_tag = tag_id       
                                       
                     if tag or (self.stop_last_seen is not None and time.time() - self.stop_last_seen <= 1):
                         self.control.stop()
