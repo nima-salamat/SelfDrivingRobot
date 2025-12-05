@@ -37,6 +37,12 @@ AT_BOTTOM_ROI = 1
 AT_LEFT_ROI = 0.0
 AT_RIGHT_ROI = 1.0
 
+# Traffic Light ROI
+TL_TOP_ROI = 0.0
+TL_BOTTOM_ROI = 1
+TL_LEFT_ROI = 0.0
+TL_RIGHT_ROI = 1.0
+
 # --- Control Gains ---
 # These are proportional gains for steering correction
 LOW_KP = 0.5 # smaller correction when error is small
