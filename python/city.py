@@ -5,9 +5,11 @@ from vision.traffic_light import TrafficLightDetector
 from controller import RobotController
 from config_city import SPEED, CROSSWALK_SLEEP, CROSSWALK_THRESH_SPEND, default_height, default_width
 import config_city 
+from stream import start_stream
 import logging
 import cv2
 import time
+import threading
 logging.disable(logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -67,14 +69,13 @@ class Robot:
         if color == "RED":
             self.red_traffic_light_seen = now
             return
-
-        
         
         self.red_traffic_light_seen = 0
         
         
     def run(self):
         logger.info("starting")
+        prev_time = time.time()
         try:
             while True:
                 tag = False
@@ -118,11 +119,24 @@ class Robot:
                             cv2.imshow("frame", frame)
                         if frame_at is not None:
                             cv2.imshow("at", frame_at)
-
+             
+                    if config_city.STREAM:
+                        curr_time = time.time()
+                        fps = 1.0 / (curr_time - prev_time)
+                        prev_time = curr_time
+                        display_frame = debug.get("combined").copy()
+                        cv2.putText(display_frame, f"FPS: {fps:.1f}", (10, 30),
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                        config_city.debug_frame_buffer = display_frame
+                    
                 else: # not 3 sec
                     self.control.stop()
                     time.sleep(0.1)
+                    frame_at = self.camera.capture_frame(resize=False)
                     self.check_crosswalk(frame_at)
+                    if config_city.STREAM:
+                        config_city.debug_frame_buffer = frame_at
+                    
                     continue
                 
 
@@ -148,15 +162,16 @@ class Robot:
             
             self.close()
             logger.info("exited")
-            
     
     def close(self):
         self.control.stop()
         self.control.set_angle(90)
         self.camera.release()
         cv2.destroyAllWindows()
-        
 
 if __name__ == '__main__':
+    if config_city.STREAM:
+        flask_thread = threading.Thread(target=start_stream, daemon=True)
+        flask_thread.start()
     robot = Robot()
     robot.run()
