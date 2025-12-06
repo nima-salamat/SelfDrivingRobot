@@ -1,6 +1,7 @@
 from vision.camera import Camera
 from vision.city_vision_processing import VisionProcessor
 from vision.apriltag import ApriltagDetector
+from vision.traffic_light import TrafficLightDetector
 from controller import RobotController
 from config_city import SPEED, CROSSWALK_SLEEP, CROSSWALK_THRESH_SPEND, default_height, default_width
 import config_city 
@@ -19,12 +20,15 @@ class Robot:
 
         self.vision = VisionProcessor()
         self.apriltag_detector = ApriltagDetector()
+        self.traffic_light = TrafficLightDetector()
         self.crosswalk_time_start = 0
         self.crosswalk_last_seen = 0
         self.last_tag = None
         self.stop_last_seen = None
+        self.red_traffic_light_seen = 0
         
-    def check_crosswalk(self):
+    def check_crosswalk(self, frame):
+        self.check_traffic_light(frame)
         now = time.time()
         if now - self.crosswalk_last_seen>= CROSSWALK_THRESH_SPEND:
             # Only reset the crosswalk timer if it's not already running
@@ -32,11 +36,11 @@ class Robot:
             self.crosswalk_last_seen = now
 
         # If crosswalk timer is running, check for elapsed time
-        if self.crosswalk_time_start != 0:
+        if self.crosswalk_time_start != 0 and self.red_traffic_light_seen == 0:
             elapsed = now - self.crosswalk_time_start
             if elapsed >= CROSSWALK_SLEEP:
                 self.crosswalk_time_start = 0
-                print(self.last_tag)
+                logger.debug(f"navigate with tag: {self.last_tag}")
                 # Navigate based on last tag detected
                 if self.last_tag == 2:
                      time.sleep(0.1)
@@ -54,7 +58,21 @@ class Robot:
                     time.sleep(0.1)
                     self.control.forward_pulse(f"f {SPEED}  10 95")
                     time.sleep(0.1)
-                    
+    
+    def check_traffic_light(self, frame):
+        now = time.time()
+        if self.red_traffic_light_seen and (now - self.red_traffic_light_seen) <= 0.5:
+            return
+        color, debug_frame = self.traffic_light.detect(frame)
+        if color == "RED":
+            self.red_traffic_light_seen = now
+            return
+
+        
+        
+        self.red_traffic_light_seen = 0
+        
+        
     def run(self):
         logger.info("starting")
         try:
@@ -70,7 +88,6 @@ class Robot:
 
                     frame = cv2.resize(frame_at, (default_width, default_height), interpolation=cv2.INTER_AREA)
 
-                    
                     result = self.vision.detect(frame)
         
                     angle = result.get("steering_angle")
@@ -105,15 +122,14 @@ class Robot:
                 else: # not 3 sec
                     self.control.stop()
                     time.sleep(0.1)
-                    self.check_crosswalk()
+                    self.check_crosswalk(frame_at)
                     continue
                 
 
                 if crosswalk and time.time() - self.crosswalk_last_seen >= CROSSWALK_THRESH_SPEND:
-                    self.check_crosswalk()
                     self.control.stop()
                     time.sleep(0.1)
-                    
+                    self.check_crosswalk(frame_at)
                     continue
                 
                 self.control.set_angle(angle)
@@ -128,7 +144,6 @@ class Robot:
             
         except Exception as e:
             logger.error(f"error {e}")
-            print(e)
         finally:
             
             self.close()
