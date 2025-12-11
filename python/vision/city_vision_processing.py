@@ -161,7 +161,7 @@ class VisionProcessor:
         # -------------------------
         debug = {"rl_draw": None, "ll_draw": None, "combined": None, "crosswalk_draw": cw_debug}
 
-        if config_city.DEBUG:
+        if config_city.DEBUG or config_city.STREAM:
             vis = frame.copy()
 
             # ROI boxes
