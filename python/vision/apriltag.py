@@ -1,6 +1,24 @@
 import cv2
 from cv2 import aruco
-from config_city import AT_TOP_ROI, AT_BOTTOM_ROI, AT_LEFT_ROI, AT_RIGHT_ROI
+import base_config
+import config_city
+import config_race
+if base_config.MODE == "main":
+    conf_file = base_config
+elif base_config.MODE == "city":
+    conf_file = config_city
+
+elif base_config.MODE == "race":
+    conf_file = config_race
+else:
+    conf_file = base_config
+        
+AT_TOP_ROI, AT_BOTTOM_ROI, AT_LEFT_ROI, AT_RIGHT_ROI = (
+    conf_file.AT_TOP_ROI,
+    conf_file.AT_BOTTOM_ROI,
+    conf_file.AT_LEFT_ROI,
+    conf_file.AT_RIGHT_ROI
+)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -84,8 +102,6 @@ class ApriltagDetector:
             if max_area < area:
                 largest_tag = i
                 max_area = area
-            
-                
             
         # -----------------------------
         # 5) Draw ROI box on the frame
