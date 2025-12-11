@@ -68,7 +68,7 @@ class TrafficLightDetector:
                 cv2.drawContours(mask_temp, [c], -1, 255, -1)
                 
                 mean_val = cv2.mean(hsv[:,:,2], mask=mask_temp)[0]
-                if mean_val < 120:
+                if mean_val < 180:
                     continue
                 
                 light_color = color_name
