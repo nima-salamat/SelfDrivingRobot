@@ -1,8 +1,10 @@
+import base_config
+base_config.MODE="race"
 from vision.camera import Camera
 from vision.race_vision_processing import VisionProcessor
 from vision.at_race import ApriltagDetector
 from controller import RobotController
-from config_race import SPEED, CROSSWALK_SLEEP, CROSSWALK_THRESH_SPEND, default_height, default_width
+from config_race import SPEED, default_height, default_width
 import config_race
 import logging
 import cv2
@@ -32,14 +34,11 @@ class Robot:
             
                 frame = cv2.resize(frame_at, (default_width, default_height), interpolation=cv2.INTER_AREA)
                 
-                
-                result = self.vision.detect(frame)
-                
+                result = self.vision.detect(frame)                
                 
                 angle = result.get("steering_angle")
-                tags, frame_at = self.apriltag_detector.detect(frame_at)
+                tags, frame_at, _ = self.apriltag_detector.detect(frame_at)
 
-                
                 if isinstance(tags, list) and len(tags) > 0:
                         tag = tags[0]
                         if isinstance(tag, dict):
@@ -57,9 +56,7 @@ class Robot:
                                         
                                     else:
                                     
-                                        pass
-                                    
-                                    
+                                        pass                         
                                     
                 if config_race.DEBUG:
                     debug = result.get("debug") or {}
@@ -77,7 +74,6 @@ class Robot:
                     
                     self.stop_last_seen = None
                 
-                
                 self.control.set_angle(angle)
                 time.sleep(0.01)
                 self.control.set_speed(SPEED)  
@@ -92,7 +88,6 @@ class Robot:
             
             self.close()
             logger.info("exited")
-            
     
     def close(self):
         time.sleep(0.01)
@@ -102,7 +97,6 @@ class Robot:
         time.sleep(0.01)
         self.camera.release()
         cv2.destroyAllWindows()
-        
 
 if __name__ == '__main__':
     robot = Robot()

@@ -1,3 +1,5 @@
+import base_config
+base_config.MODE="city"
 from vision.camera import Camera
 from vision.city_vision_processing import VisionProcessor
 from vision.apriltag import ApriltagDetector
@@ -72,7 +74,6 @@ class Robot:
         
         self.red_traffic_light_seen = 0
         
-        
     def run(self):
         logger.info("starting")
         prev_time = time.time()
@@ -139,7 +140,6 @@ class Robot:
                     
                     continue
                 
-
                 if crosswalk and time.time() - self.crosswalk_last_seen >= CROSSWALK_THRESH_SPEND:
                     self.control.stop()
                     time.sleep(0.1)
@@ -150,8 +150,6 @@ class Robot:
                 time.sleep(0.01)
                 self.control.set_speed(SPEED)  
                 time.sleep(0.01)
-                
-                
 
         except KeyboardInterrupt:
             logger.error("error KeyboardInterrupt")

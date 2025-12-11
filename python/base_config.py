@@ -61,3 +61,6 @@ SPEED = 255
 # --- Crosswalk Setting ---
 CROSSWALK_SLEEP = 3
 CROSSWALK_THRESH_SPEND = 10
+
+# --- Running Mode ---
+MODE = "main" # it can be "city" or "race" too
