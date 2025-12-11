@@ -61,7 +61,7 @@ class TrafficLightDetector:
             contours, _ = cv2.findContours(mask_color, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             
             for c in contours:
-                if cv2.contourArea(c) < 150:
+                if cv2.contourArea(c) < 5:
                     continue
                 
                 mask_temp = np.zeros_like(mask_color)
