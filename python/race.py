@@ -2,7 +2,7 @@ import base_config
 base_config.MODE="race"
 from vision.camera import Camera
 from vision.race_vision_processing import VisionProcessor
-from vision.at_race import ApriltagDetector
+from vision.apriltag import ApriltagDetector
 from controller import RobotController
 from config_race import SPEED, default_height, default_width
 import config_race
