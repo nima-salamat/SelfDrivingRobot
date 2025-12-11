@@ -47,13 +47,14 @@ class Camera:
                 
                 # Try to set controls, but continue if it fails
                 try:
-                    self.picam.set_controls({
-       "AeEnable": True,
-    "AwbEnable": True,
-    "AnalogueGain": 3.0, 
-    "ExposureTime": 50000,  
+#                     self.picam.set_controls({
+#        "AeEnable": True,
+#     "AwbEnable": True,
+#     "AnalogueGain": 3.0, 
+#     "ExposureTime": 50000,  
    
-})
+# })                
+                    pass
 
 
                 except Exception as e:
