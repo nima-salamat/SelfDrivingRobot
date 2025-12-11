@@ -125,6 +125,7 @@ class Robot:
                         curr_time = time.time()
                         fps = 1.0 / (curr_time - prev_time)
                         prev_time = curr_time
+                        debug = result.get("debug") or {}
                         display_frame = debug.get("combined").copy()
                         cv2.putText(display_frame, f"FPS: {fps:.1f}", (10, 30),
                                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
