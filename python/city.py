@@ -1,7 +1,8 @@
 import base_config
 base_config.MODE="city"
-from vision.camera import Camera
+from vision.camera import CameraThreaded
 from vision.city_vision_processing import VisionProcessor
+from vision.crosswalk import CrosswalkProcess
 from vision.apriltag import ApriltagDetector
 from vision.traffic_light import TrafficLightDetector
 from controller import RobotController
@@ -12,6 +13,8 @@ import logging
 import cv2
 import time
 import threading
+from multiprocessing import Queue, Manager, Process
+import queue
 logging.disable(logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -19,20 +22,47 @@ config_city.DEBUG = False
 
 class Robot:
     def __init__(self):
-        self.camera = Camera()
+        
+        self.manager = Manager()
+        self.shared_dict = self.manager.dict()
+        
+        self.crosswalk_frame_queue = Queue()
+        self.apriltag_frame_queue = Queue()
+        self.traffic_light_frame_queue = Queue()
+        self.main_queue = queue.Queue()
+        
+        self.camera = CameraThreaded(
+            main_queue=self.main_queue, 
+            frame_queues=[self.crosswalk_frame_queue, 
+                        self.apriltag_frame_queue,
+                        self.traffic_light_frame_queue
+            ]
+        )
+        
         self.control = RobotController()
-
         self.vision = VisionProcessor()
-        self.apriltag_detector = ApriltagDetector()
-        self.traffic_light = TrafficLightDetector()
+        
+        self.crosswalk = CrosswalkProcess(self.shared_dict, self.crosswalk_frame_queue)
+        self.apriltag_detector = ApriltagDetector(self.shared_dict, self.apriltag_frame_queue)
+        self.traffic_light = TrafficLightDetector(self.shared_dict, self.traffic_light_frame_queue)
+        
+        self.crosswalk_process = Process(target=self.crosswalk.runner, daemon=True)
+        self.apriltag_process = Process(target=self.apriltag_detector.runner, daemon=True)
+        self.traffic_light_process = Process(target=self.traffic_light.runner, daemon=True)
+
+        self.crosswalk_process.start()
+        self.apriltag_process.start()
+        self.traffic_light_process.start()
+
+
         self.crosswalk_time_start = 0
         self.crosswalk_last_seen = 0
         self.last_tag = None
         self.stop_last_seen = None
         self.red_traffic_light_seen = 0
         
-    def check_crosswalk(self, frame):
-        self.check_traffic_light(frame)
+    def check_crosswalk(self):
+        self.check_traffic_light()
         now = time.time()
         if now - self.crosswalk_last_seen>= CROSSWALK_THRESH_SPEND:
             # Only reset the crosswalk timer if it's not already running
@@ -63,13 +93,15 @@ class Robot:
                     self.control.forward_pulse(f"f {SPEED}  10 95")
                     time.sleep(0.1)
     
-    def check_traffic_light(self, frame):
+    def check_traffic_light(self):
         now = time.time()
-        if self.red_traffic_light_seen and (now - self.red_traffic_light_seen) <= 0.5:
-            return
-        color, debug_frame = self.traffic_light.detect(frame)
+        
+        color = self.shared_dict["last_color"]
         if color == "RED":
             self.red_traffic_light_seen = now
+            return
+        
+        if self.red_traffic_light_seen and (now - self.red_traffic_light_seen) <= 0.5:
             return
         
         self.red_traffic_light_seen = 0
@@ -82,6 +114,7 @@ class Robot:
                 tag = False
                 if config_city.DEBUG:
                     cv2.waitKey(1)
+                
                 angle=90
                 crosswalk = False
                 
@@ -94,9 +127,9 @@ class Robot:
         
                     angle = result.get("steering_angle")
             
-                    crosswalk = result.get("crosswalk", False)
+                    crosswalk = self.shared_dict["crosswalk"]
                     
-                    tags, frame_at, largest_tag = self.apriltag_detector.detect(frame_at)
+                    largest_tag = self.shared_dict["last_tag"]
                     
                     if largest_tag is not None:
                         tag_id = largest_tag["id"]
@@ -135,16 +168,15 @@ class Robot:
                     self.control.stop()
                     time.sleep(0.1)
                     frame_at = self.camera.capture_frame(resize=False)
-                    self.check_crosswalk(frame_at)
+                    self.check_crosswalk()
                     if config_city.STREAM:
                         config_city.debug_frame_buffer = frame_at
-                    
                     continue
                 
                 if crosswalk and time.time() - self.crosswalk_last_seen >= CROSSWALK_THRESH_SPEND:
                     self.control.stop()
                     time.sleep(0.1)
-                    self.check_crosswalk(frame_at)
+                    self.check_crosswalk()
                     continue
                 
                 self.control.set_angle(angle)
