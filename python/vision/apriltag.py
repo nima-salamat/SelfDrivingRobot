@@ -121,6 +121,8 @@ class ApriltagDetector:
     def runner(self):
         while True:
             frame = self.manager_dict["frame"]
+            if frame is None:
+                    continue
             tag = self.detect(frame)[2]
             if tag is not None:
                 self.manager_dict['last_tag'] = tag

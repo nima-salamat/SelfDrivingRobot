@@ -51,4 +51,6 @@ class CrosswalkProcess:
     def runner(self):
         while True:
             frame = self.manager_dict["frame"]
+            if frame is None:
+                    continue
             self.manager_dict['crosswalk'] = self.detect(frame)

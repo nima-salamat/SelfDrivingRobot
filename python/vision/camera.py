@@ -6,7 +6,6 @@ except ImportError:
 
 from time import sleep
 import cv2
-import multiprocessing
 import threading
 import logging
 
@@ -20,15 +19,15 @@ class Camera:
         self.pi_mode = False
         self.camera_initialized = False
 
-        # Initialize camera based on mode
+        # Initialize camera
         if mode == "picam" and Picamera2 is not None:
+            self.pi_mode = True
             try:
-                self.pi_mode = True
                 self.picam = Picamera2()
                 self.setup_camera()
                 logger.info("Using Picamera2")
             except Exception as e:
-                logger.error(f"Failed to initialize Picamera2: {e}")
+                logger.error(f"Picamera2 init failed: {e}")
                 logger.info("Falling back to OpenCV")
                 self.pi_mode = False
                 self.cap = cv2.VideoCapture(0)
@@ -43,57 +42,36 @@ class Camera:
         if self.pi_mode:
             try:
                 config = self.picam.create_preview_configuration(
-                    main={"size": (680, 420), "format": "RGB888"}
+                    main={"size": (self.width, self.height), "format": "RGB888"}
                 )
                 self.picam.configure(config)
-                
-                # Try to set controls, but continue if it fails
-                try:
-#                     self.picam.set_controls({
-#        "AeEnable": True,
-#     "AwbEnable": True,
-#     "AnalogueGain": 3.0, 
-#     "ExposureTime": 50000,  
-   
-# })                
-                    pass
-
-
-                except Exception as e:
-                    logger.debug(f"Could not set manual camera controls: {e}")
-                
                 self.picam.start()
-                sleep(2)  # Give camera more time to initialize
+                sleep(2)
                 self.camera_initialized = True
-                
             except Exception as e:
                 logger.error(f"Picamera2 setup failed: {e}")
                 self.camera_initialized = False
                 raise
-
         else:
-            # OpenCV camera setup
             if not self.cap.isOpened():
-                # Try to reopen
                 self.cap = cv2.VideoCapture(0)
-                
             if not self.cap.isOpened():
-                logger.error("Failed to open webcam (index 0)")
+                logger.error("Failed to open webcam")
                 raise RuntimeError("No webcam detected.")
-                
+
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
             self.cap.set(cv2.CAP_PROP_FPS, 30)
             self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-            
+
             # Test capture
-            for _ in range(5):  # Try a few times
+            for _ in range(5):
                 ret, frame = self.cap.read()
                 if ret and frame is not None:
                     self.camera_initialized = True
                     break
                 sleep(0.1)
-            
+
             if not self.camera_initialized:
                 logger.error("Webcam test capture failed")
                 raise RuntimeError("Webcam not functioning properly")
@@ -114,15 +92,12 @@ class Camera:
                 if not ret or frame is None:
                     logger.warning("OpenCV camera returned no frame")
                     return None
-                
+
             if resize:
-                # Resize and convert if necessary
                 if frame.shape[:2] != (self.height, self.width):
                     frame = cv2.resize(frame, (self.width, self.height), interpolation=cv2.INTER_AREA)
-                
-            
-            return frame
 
+            return frame
         except Exception as e:
             logger.error(f"Error capturing frame: {e}")
             return None
@@ -140,16 +115,15 @@ class Camera:
                 self.cap.release()
             except Exception as e:
                 logger.error(f"Error releasing OpenCV camera: {e}")
-            
-                
+
+
 class CameraThreaded(Camera):
-    def __init__(self, manager_dict) -> None:
+    def __init__(self, manager_dict):
         super().__init__(width=default_width, height=default_height, mode=CAMERA_MODE)
-        self.thread = threading.Thread(target=self.reader, args=(manager_dict,))
+        self.thread = threading.Thread(target=self.reader, args=(manager_dict,), daemon=True)
         self.thread.start()
-    
+
     def reader(self, manager_dict):
         while True:
             frame = self.capture_frame(resize=False)
             manager_dict["frame"] = frame
-            

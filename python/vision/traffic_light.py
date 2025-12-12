@@ -90,6 +90,8 @@ class TrafficLightDetector:
     def runner(self):
         while True:
                 frame = self.manager_dict["frame"]
+                if frame is None:
+                    continue
                 color = self.detect(frame)[0]
                 if color is not None:
                     self.manager_dict['last_color'] = color
