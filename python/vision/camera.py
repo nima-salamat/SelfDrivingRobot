@@ -143,20 +143,16 @@ class Camera:
             
                 
 class CameraThreaded(Camera):
-    def __init__(self, main_queue, frame_queues=[]) -> None:
+    def __init__(self, manager_dict) -> None:
         super().__init__(width=default_width, height=default_height, mode=CAMERA_MODE)
         self.camera = Camera()
-        self.thread = threading.Thread(target=self.reader, args=(main_queue, frame_queues))
+        self.thread = threading.Thread(target=self.reader, args=(manager_dict,))
         self.thread.start()
     
-    def reader(self, main_queue, frame_queues):
+    def reader(self, manager_dict):
         while True:
             ret, frame = self.capture_frame(resize=False)
             if not ret:
                 continue
-            if not main_queue.full():
-                main_queue.put(frame)
+            manager_dict["frame"] = frame
             
-            for q in frame_queues:
-                if not q.full():
-                    q.put(frame)

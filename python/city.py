@@ -25,26 +25,16 @@ class Robot:
         
         self.manager = Manager()
         self.shared_dict = self.manager.dict()
+        self.shared_dict["frame"] = None
         
-        self.crosswalk_frame_queue = Queue()
-        self.apriltag_frame_queue = Queue()
-        self.traffic_light_frame_queue = Queue()
-        self.main_queue = queue.Queue()
-        
-        self.camera = CameraThreaded(
-            main_queue=self.main_queue, 
-            frame_queues=[self.crosswalk_frame_queue, 
-                        self.apriltag_frame_queue,
-                        self.traffic_light_frame_queue
-            ]
-        )
+        self.camera = CameraThreaded()
         
         self.control = RobotController()
         self.vision = VisionProcessor()
         
-        self.crosswalk = CrosswalkProcess(self.shared_dict, self.crosswalk_frame_queue)
-        self.apriltag_detector = ApriltagDetector(self.shared_dict, self.apriltag_frame_queue)
-        self.traffic_light = TrafficLightDetector(self.shared_dict, self.traffic_light_frame_queue)
+        self.crosswalk = CrosswalkProcess(self.shared_dict)
+        self.apriltag_detector = ApriltagDetector(self.shared_dict)
+        self.traffic_light = TrafficLightDetector(self.shared_dict)
         
         self.crosswalk_process = Process(target=self.crosswalk.runner, daemon=True)
         self.apriltag_process = Process(target=self.apriltag_detector.runner, daemon=True)
@@ -119,7 +109,7 @@ class Robot:
                 crosswalk = False
                 
                 if self.crosswalk_time_start == 0: # 3 sec
-                    frame_at = self.camera.capture_frame(resize=False)
+                    frame_at = self.shared_dict["frame"]
 
                     frame = cv2.resize(frame_at, (default_width, default_height), interpolation=cv2.INTER_AREA)
 

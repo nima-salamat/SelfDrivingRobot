@@ -24,9 +24,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 class ApriltagDetector:
-    def __init__(self, manager_dict, frame_queue):
+    def __init__(self, manager_dict):
         self.manager_dict = manager_dict
-        self.frame_queue = frame_queue
         self.aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_APRILTAG_36h11)
         self.aruco_params = aruco.DetectorParameters()
         logger.info("ArUco AprilTag 36h11 dictionary initialized")
@@ -65,7 +64,11 @@ class ApriltagDetector:
         )
 
         detected_tags = []
-
+        
+        if conf_file.DEBUG:
+            frame = frame.copy()
+        else:
+            frame = None
         # -----------------------------
         # 4) Process detected corners
         # -----------------------------
@@ -112,14 +115,12 @@ class ApriltagDetector:
         # -----------------------------
         if conf_file.DEBUG:
             cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
-        else:
-            frame = None
+            
         return detected_tags, frame, largest_tag
     
     def runner(self):
         while True:
-            if not self.frame_queue.empty():
-                frame = self.frame_queue.get()
-                tag = self.detect(frame)[2]
-                if tag is not None:
-                    self.manager_dict['last_tag'] = tag
+            frame = self.manager_dict["frame"]
+            tag = self.detect(frame)[2]
+            if tag is not None:
+                self.manager_dict['last_tag'] = tag

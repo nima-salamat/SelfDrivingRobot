@@ -9,9 +9,8 @@ from config_city import (
 import config_city
 
 class TrafficLightDetector:
-    def __init__(self, manager_dict, frame_queue):
+    def __init__(self, manager_dict):
         self.manager_dict = manager_dict
-        self.frame_queue = frame_queue
     
     def detect(self, frame):
         
@@ -90,8 +89,7 @@ class TrafficLightDetector:
 
     def runner(self):
         while True:
-            if not self.frame_queue.empty():
-                frame = self.frame_queue.get()
+                frame = self.manager_dict["frame"]
                 color = self.detect(frame)[0]
                 if color is not None:
                     self.manager_dict['last_color'] = color

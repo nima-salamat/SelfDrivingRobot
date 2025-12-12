@@ -7,9 +7,8 @@ import numpy as np
 
 
 class CrosswalkProcess:
-    def __init__(self, manager_dict, frame_queue):
+    def __init__(self, manager_dict):
         self.manager_dict = manager_dict
-        self.frame_queue = frame_queue
         
     def detect(self, frame):
         height, width = frame.shape[:2]
@@ -51,6 +50,5 @@ class CrosswalkProcess:
 
     def runner(self):
         while True:
-            if not self.frame_queue.empty():
-                frame = self.frame_queue.get()
-                self.manager_dict['crosswalk'] = self.detect(frame)
+            frame = self.manager_dict["frame"]
+            self.manager_dict['crosswalk'] = self.detect(frame)
