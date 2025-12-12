@@ -145,14 +145,11 @@ class Camera:
 class CameraThreaded(Camera):
     def __init__(self, manager_dict) -> None:
         super().__init__(width=default_width, height=default_height, mode=CAMERA_MODE)
-        self.camera = Camera()
         self.thread = threading.Thread(target=self.reader, args=(manager_dict,))
         self.thread.start()
     
     def reader(self, manager_dict):
         while True:
-            ret, frame = self.capture_frame(resize=False)
-            if not ret:
-                continue
+            frame = self.capture_frame(resize=False)
             manager_dict["frame"] = frame
             
