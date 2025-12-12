@@ -24,7 +24,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 class ApriltagDetector:
-    def __init__(self):
+    def __init__(self, manager_dict, frame_queue):
+        self.manager_dict = manager_dict
+        self.frame_queue = frame_queue
         self.aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_APRILTAG_36h11)
         self.aruco_params = aruco.DetectorParameters()
         logger.info("ArUco AprilTag 36h11 dictionary initialized")
@@ -87,12 +89,14 @@ class ApriltagDetector:
                 })
 
                 # Draw box + ID on full frame
-                cv2.polylines(frame, [c_global.astype(int)], True, (0,255,0), 2)
-                cv2.putText(
-                    frame, f"ID:{ids[i][0]}",
-                    (int((min_x+max_x)/2), int((min_y+max_y)/2)),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 2
-                )
+                if conf_file.DEBUG:
+                    
+                    cv2.polylines(frame, [c_global.astype(int)], True, (0,255,0), 2)
+                    cv2.putText(
+                        frame, f"ID:{ids[i][0]}",
+                        (int((min_x+max_x)/2), int((min_y+max_y)/2)),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 2
+                    )
 
         max_area = 0
         largest_tag = None
@@ -106,6 +110,16 @@ class ApriltagDetector:
         # -----------------------------
         # 5) Draw ROI box on the frame
         # -----------------------------
-        cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
-
+        if conf_file.DEBUG:
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
+        else:
+            frame = None
         return detected_tags, frame, largest_tag
+    
+    def runner(self):
+        while True:
+            if not self.frame_queue.empty():
+                frame = self.frame_queue.get()
+                tag = self.detect(frame)[2]
+                if tag is not None:
+                    self.manager_dict['last_tag'] = tag
