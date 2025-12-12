@@ -1,20 +1,14 @@
-import time
-from utils.commands import ArduinoConnection
+from utils.commands import ArduinoConnectionThreaded
 
 class RobotController:
-    def __init__(self, min_interval=0.05):
-        self.connection = ArduinoConnection()
+    def __init__(self):
+        self.connection = ArduinoConnectionThreaded()
         self.current_angle = 90
         self.current_speed = 0
-        self.min_interval = min_interval
-        self._last_send_time = 0
 
     def _send_command(self, cmd: str):
         cmd = cmd.strip() + "\n" 
-        now = time.time()
-        # if now - self._last_send_time >= self.min_interval:
         self.connection.send_command(cmd)
-        self._last_send_time = now
 
     def servo(self, angle: int):
         if angle < 30:
@@ -60,4 +54,3 @@ class RobotController:
     
     def backward_pulse(self, s):
         self._send_command(s)
-    
