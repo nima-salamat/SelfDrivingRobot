@@ -47,7 +47,6 @@ class ArduinoConnection:
                         self.serial_connection.flush()
                     except:
                         pass
-                    return True
             except Exception:
                 # reopen and retry
                 try:
@@ -55,7 +54,6 @@ class ArduinoConnection:
                 except:
                     pass
                 time.sleep(0.1)
-        return False
 
     def close(self):
         if self.serial_connection:
@@ -63,3 +61,18 @@ class ArduinoConnection:
                 self.serial_connection.close()
             except:
                 pass
+
+class ArduinoConnectionThreaded:
+    def __init__(self, command_queue):
+        super().__init__()
+        self.command_queue = command_queue
+        self.thread = threading.Thread(target=self.sender, args=(command_queue,))
+
+    def send_command(self, command):
+        self.command_queue.put(command)
+        
+    def sender(self, command_queue):
+        while True:
+            if not command_queue.empty():
+                command = command_queue.get()
+                super().send_command(command)
