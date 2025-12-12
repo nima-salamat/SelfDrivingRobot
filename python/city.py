@@ -14,8 +14,10 @@ import cv2
 import time
 import threading
 from multiprocessing import Manager, Process
-logging.disable(logging.DEBUG)
+# logging.disable(logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
 
 config_city.DEBUG = False
 
@@ -112,7 +114,7 @@ class Robot:
                 
                 if self.crosswalk_time_start == 0: # 3 sec
                     frame_at = self.shared_dict["frame"]
-                    if frame is None:
+                    if frame_at is None:
                         continue
 
                     frame = cv2.resize(frame_at, (default_width, default_height), interpolation=cv2.INTER_AREA)
@@ -161,7 +163,7 @@ class Robot:
                 else: # not 3 sec
                     self.control.stop()
                     time.sleep(0.1)
-                    frame_at = self.camera.capture_frame(resize=False)
+                    frame_at = self.shared_dict["frame"]
                     self.check_crosswalk()
                     if config_city.STREAM:
                         config_city.debug_frame_buffer = frame_at
