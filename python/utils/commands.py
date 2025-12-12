@@ -2,7 +2,7 @@ import serial
 import threading
 import time
 from serial import SerialException
-
+from queue import Queue
 serial_lock = threading.Lock()
 
 class ArduinoConnection:
@@ -63,10 +63,10 @@ class ArduinoConnection:
                 pass
 
 class ArduinoConnectionThreaded:
-    def __init__(self, command_queue):
+    def __init__(self):
         super().__init__()
-        self.command_queue = command_queue
-        self.thread = threading.Thread(target=self.sender, args=(command_queue,))
+        self.command_queue = Queue()
+        self.thread = threading.Thread(target=self.sender, args=(self.command_queue,))
         self.thread.start()
 
     def send_command(self, command):
