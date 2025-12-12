@@ -27,7 +27,7 @@ class Robot:
         self.shared_dict = self.manager.dict()
         self.shared_dict["frame"] = None
         
-        self.camera = CameraThreaded()
+        self.camera = CameraThreaded(self.shared_dict)
         
         self.control = RobotController()
         self.vision = VisionProcessor()
