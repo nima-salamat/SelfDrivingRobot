@@ -62,7 +62,7 @@ class ArduinoConnection:
             except:
                 pass
 
-class ArduinoConnectionThreaded:
+class ArduinoConnectionThreaded(ArduinoConnection):
     def __init__(self):
         super().__init__()
         self.command_queue = Queue()
