@@ -1,5 +1,7 @@
 import cv2
 from cv2 import aruco
+from multiprocessing import shared_memory
+import numpy as np
 import base_config
 import config_city
 import config_race
@@ -118,10 +120,18 @@ class ApriltagDetector:
         return detected_tags, frame, largest_tag
     
     def runner(self):
+        shm = shared_memory.SharedMemory(name="camera_frame")
+        
+        frame = np.ndarray(
+            (480, 640, 3),
+            dtype=np.uint8,
+            buffer=shm.buf
+        )
+
         while True:
-            frame = self.manager_dict["frame"]
+            
             if frame is None:
                     continue
-            tag = self.detect(frame)[2]
+            tag = frame.copy()
             if tag is not None:
                 self.manager_dict['last_tag'] = tag

@@ -7,6 +7,9 @@ except ImportError:
 from time import sleep
 import cv2
 import threading
+import numpy as np
+from multiprocessing import shared_memory
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -118,12 +121,36 @@ class Camera:
 
 
 class CameraThreaded(Camera):
-    def __init__(self, manager_dict):
+    def __init__(self):
         super().__init__(width=default_width, height=default_height, mode=CAMERA_MODE)
-        self.thread = threading.Thread(target=self.reader, args=(manager_dict,), daemon=True)
+        
+        WIDTH = 640
+        HEIGHT = 480
+        CHANNELS = 3
+
+        FRAME_SHAPE = (HEIGHT, WIDTH, CHANNELS)
+        FRAME_DTYPE = np.uint8
+        FRAME_SIZE = np.prod(FRAME_SHAPE)
+
+        self.shm = shared_memory.SharedMemory(
+            name="camera_frame",
+            create=True,
+            size=FRAME_SIZE
+        )
+
+        self.shared_frame = np.ndarray(
+            FRAME_SHAPE,
+            dtype=FRAME_DTYPE,
+            buffer=self.shm.buf
+        )
+        self.lock  = threading.Lock()
+        self._frame = None
+        self.thread = threading.Thread(target=self.reader, daemon=True)
         self.thread.start()
 
-    def reader(self, manager_dict):
+    def reader(self):
         while True:
             frame = self.capture_frame(resize=False)
-            manager_dict["frame"] = frame
+            with self.lock:
+                self.shared_frame[:] = frame
+            self._frame = frame

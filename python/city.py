@@ -15,8 +15,8 @@ import time
 import threading
 from multiprocessing import Manager, Process
 import atexit
-
-logging.basicConfig(level=logging.DEBUG)
+logging.disable(logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 config_city.DEBUG = False
@@ -111,7 +111,7 @@ class Robot:
                 crosswalk = False
 
                 if self.crosswalk_time_start == 0:  # 3 sec
-                    frame_at = self.shared_dict["frame"]
+                    frame_at = self.camera._frame.copy()
                     if frame_at is None:
                         continue
 
@@ -190,6 +190,8 @@ class Robot:
         stop_stream()
         # Release the camera
         self.camera.release()
+        self.camera.shm.close()
+        self.camera.shm.unlink()
         cv2.destroyAllWindows()
 
         # Terminate all child processes

@@ -4,6 +4,7 @@ from config_city import (
 )
 import cv2
 import numpy as np
+from multiprocessing import shared_memory
 
 
 class CrosswalkProcess:
@@ -49,8 +50,15 @@ class CrosswalkProcess:
         return crosswalk
 
     def runner(self):
+        shm = shared_memory.SharedMemory(name="camera_frame")
+
+        frame = np.ndarray(
+            (480, 640, 3),
+            dtype=np.uint8,
+            buffer=shm.buf
+        )
         while True:
-            frame = self.manager_dict["frame"]
+            frame = frame.copy()
             if frame is None:
                     continue
             self.manager_dict['crosswalk'] = self.detect(frame)
