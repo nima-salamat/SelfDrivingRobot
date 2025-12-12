@@ -1,7 +1,7 @@
 #include <Servo.h>
 #include <ctype.h>
 #include <UltrasonicSensor.h>
-#include "PulseQueue.h"
+#include <PulseQueue.h>
 
 // Motor pins
 int IN1 = 10;
