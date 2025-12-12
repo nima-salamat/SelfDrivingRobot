@@ -67,8 +67,7 @@ class ApriltagDetector:
         
         if conf_file.DEBUG:
             frame = frame.copy()
-        else:
-            frame = None
+        
         # -----------------------------
         # 4) Process detected corners
         # -----------------------------
