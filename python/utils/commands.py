@@ -67,6 +67,7 @@ class ArduinoConnectionThreaded:
         super().__init__()
         self.command_queue = command_queue
         self.thread = threading.Thread(target=self.sender, args=(command_queue,))
+        self.thread.start()
 
     def send_command(self, command):
         self.command_queue.put(command)
