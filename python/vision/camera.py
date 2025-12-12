@@ -6,6 +6,8 @@ except ImportError:
 
 from time import sleep
 import cv2
+import multiprocessing
+import threading
 import logging
 
 logger = logging.getLogger(__name__)
@@ -138,3 +140,23 @@ class Camera:
                 self.cap.release()
             except Exception as e:
                 logger.error(f"Error releasing OpenCV camera: {e}")
+            
+                
+class CameraThreaded(Camera):
+    def __init__(self, main_queue, frame_queues=[]) -> None:
+        super().__init__(width=default_width, height=default_height, mode=CAMERA_MODE)
+        self.camera = Camera()
+        self.thread = threading.Thread(target=self.reader, args=(main_queue, frame_queues))
+        self.thread.start()
+    
+    def reader(self, main_queue, frame_queues):
+        while True:
+            ret, frame = self.capture_frame(resize=False)
+            if not ret:
+                continue
+            if not main_queue.full():
+                main_queue.put(frame)
+            
+            for q in frame_queues:
+                if not q.full():
+                    q.put(frame)
