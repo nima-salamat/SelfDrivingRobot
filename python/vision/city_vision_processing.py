@@ -2,6 +2,7 @@ import math
 from config_city import (
     RL_TOP_ROI, RL_BOTTOM_ROI, RL_RIGHT_ROI, RL_LEFT_ROI,
     LL_TOP_ROI, LL_BOTTOM_ROI, LL_RIGHT_ROI, LL_LEFT_ROI,
+    CW_TOP_ROI, CW_BOTTOM_ROI, CW_RIGHT_ROI, CW_LEFT_ROI,
     LOW_KP, HIGH_KP, MAX_SERVO_ANGLE, MIN_SERVO_ANGLE
 )
 import config_city
@@ -10,8 +11,8 @@ import numpy as np
 
 class VisionProcessor:
     def __init__(self):
-        pass
-    
+        self.last_steering = 90
+
     def _largest_mid_x(self, lines):
         if lines is None:
             return None
@@ -38,14 +39,17 @@ class VisionProcessor:
         ll_top, ll_bottom = int(LL_TOP_ROI * height), int(LL_BOTTOM_ROI * height)
         ll_left, ll_right = int(LL_LEFT_ROI * width), int(LL_RIGHT_ROI * width)
 
-      
+        cw_top, cw_bottom = int(CW_TOP_ROI * height), int(CW_BOTTOM_ROI * height)
+        cw_left, cw_right = int(CW_LEFT_ROI * width), int(CW_RIGHT_ROI * width)
 
         # --- Crop ROIs (ROI-local coordinate space) ---
         rl_frame = frame[rl_top:rl_bottom, rl_left:rl_right].copy()
         ll_frame = frame[ll_top:ll_bottom, ll_left:ll_right].copy()
+        cw_frame = frame[cw_top:cw_bottom, cw_left:cw_right].copy()
 
         rl_frame = rl_frame if (rl_frame is not None and rl_frame.size != 0) else None
         ll_frame = ll_frame if (ll_frame is not None and ll_frame.size != 0) else None
+        cw_frame = cw_frame if (cw_frame is not None and cw_frame.size != 0) else None
 
         # --- Process ROI: gray -> blur -> edges -> HoughLinesP ---
         def process_roi(roi):
@@ -72,9 +76,45 @@ class VisionProcessor:
         rl_draw, rl_edge, rl_lines = process_roi(rl_frame)
         ll_draw, ll_edge, ll_lines = process_roi(ll_frame)
 
+        # -------------------------
+        # CROSSWALK DETECTION USING LSD
+        # -------------------------
+        crosswalk = False
+        cw_debug = None
+
+        if cw_frame is not None:
+            gray = cv2.cvtColor(cw_frame, cv2.COLOR_BGR2GRAY)
+            _, gray = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY)
+            # gray = cv2.GaussianBlur(gray, (5, 5), 0)
+            # Step 3: Apply dilation to thicken the edges
+            # dilated_image = cv2.dilate(gray, None, iterations=1)
+
+            # Step 4: Apply erosion to refine the edges
+            # eroded_image = cv2.erode(dilated_image, None, iterations=1)
+            edges = cv2.Canny(gray, 100, 150)
+            lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=20,
+                        minLineLength=5, maxLineGap=5)
+
+            vertical = 0
+            horizontal = 0
+            if lines is not None:
+                for line in lines:
+                    x0, y0, x1, y1 = line[0]
+                    slope = (y1 - y0) / (x1 - x0 + 1e-6)
+                    angle = abs(np.arctan(slope) * 180 / np.pi)
+
+                    if angle < 30:
+                        horizontal += 1
+                    elif angle > 60:
+                        vertical += 1
+            
+            if vertical > 3 and horizontal > 3:
+                crosswalk = True
+
+
                             
         # -------------------------
-        # LANE MIDPOINT
+        # LANE MIDPOINT (unchanged)
         # -------------------------
         rl_x_mid = self._largest_mid_x(rl_lines)
         ll_x_mid = self._largest_mid_x(ll_lines)
@@ -119,7 +159,7 @@ class VisionProcessor:
         # -------------------------
         # DEBUG DRAWING
         # -------------------------
-        debug = {"rl_draw": None, "ll_draw": None, "combined": None}
+        debug = {"rl_draw": None, "ll_draw": None, "combined": None, "crosswalk_draw": cw_debug}
 
         if config_city.DEBUG or config_city.STREAM:
             vis = frame.copy()
@@ -127,6 +167,7 @@ class VisionProcessor:
             # ROI boxes
             cv2.rectangle(vis, (rl_left, rl_top), (rl_right, rl_bottom), (255, 0, 0), 1)
             cv2.rectangle(vis, (ll_left, ll_top), (ll_right, ll_bottom), (0, 255, 0), 1)
+            cv2.rectangle(vis, (cw_left, cw_top), (cw_right, cw_bottom), (0, 255, 255), 1)
 
             # draw Hough lines from RL ROI (into global image)
             if rl_lines is not None:
@@ -154,6 +195,16 @@ class VisionProcessor:
             cv2.line(vis, (int(frame_center), 0), (int(frame_center), height), (0,0,255), 1)
             cv2.line(vis, (int(lane_center), 0), (int(lane_center), height), (255,0,255), 1)
 
+            # crosswalk text and paste cw_debug into the cw ROI for inspection
+            cv2.putText(vis, f"crosswalk:{crosswalk}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,255), 2)
+
+            # if cw_debug is not None:
+            #     try:
+            #         vis[cw_top:cw_bottom, cw_left:cw_right] = cv2.resize(cw_debug, (cw_right - cw_left, cw_bottom - cw_top))
+            #     except Exception:
+            #         # if paste fails, ignore (still keep vis)
+            #         pass
+
             debug["rl_draw"] = rl_draw
             debug["ll_draw"] = ll_draw
             debug["combined"] = vis
@@ -162,5 +213,7 @@ class VisionProcessor:
             "steering_angle": steering_angle,
             "error": error,
             "lane_type": lane_type,
+            "crosswalk": crosswalk,
+            "crosswalk_debug": cw_debug,
             "debug": debug
         }

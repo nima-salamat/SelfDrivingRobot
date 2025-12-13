@@ -1,7 +1,5 @@
 import cv2
 from cv2 import aruco
-from multiprocessing import shared_memory
-import numpy as np
 import base_config
 import config_city
 import config_race
@@ -26,8 +24,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class ApriltagDetector:
-    def __init__(self, manager_dict):
-        self.manager_dict = manager_dict
+    def __init__(self):
         self.aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_APRILTAG_36h11)
         self.aruco_params = aruco.DetectorParameters()
         logger.info("ArUco AprilTag 36h11 dictionary initialized")
@@ -66,10 +63,7 @@ class ApriltagDetector:
         )
 
         detected_tags = []
-        
-        if conf_file.DEBUG:
-            frame = frame.copy()
-        
+
         # -----------------------------
         # 4) Process detected corners
         # -----------------------------
@@ -93,14 +87,12 @@ class ApriltagDetector:
                 })
 
                 # Draw box + ID on full frame
-                if conf_file.DEBUG:
-                    
-                    cv2.polylines(frame, [c_global.astype(int)], True, (0,255,0), 2)
-                    cv2.putText(
-                        frame, f"ID:{ids[i][0]}",
-                        (int((min_x+max_x)/2), int((min_y+max_y)/2)),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 2
-                    )
+                cv2.polylines(frame, [c_global.astype(int)], True, (0,255,0), 2)
+                cv2.putText(
+                    frame, f"ID:{ids[i][0]}",
+                    (int((min_x+max_x)/2), int((min_y+max_y)/2)),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 2
+                )
 
         max_area = 0
         largest_tag = None
@@ -114,25 +106,6 @@ class ApriltagDetector:
         # -----------------------------
         # 5) Draw ROI box on the frame
         # -----------------------------
-        if conf_file.DEBUG:
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
-            
-        return detected_tags, frame, largest_tag
-    
-    def runner(self):
-        shm = shared_memory.SharedMemory(name="camera_frame")
-        
-        frame = np.ndarray(
-            (480, 640, 3),
-            dtype=np.uint8,
-            buffer=shm.buf
-        )
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
 
-        while True:
-            
-            if frame is None:
-                    continue
-            frame = frame.copy()
-            tag = self.detect(frame)[2]
-            if tag is not None:
-                self.manager_dict['last_tag'] = tag
+        return detected_tags, frame, largest_tag

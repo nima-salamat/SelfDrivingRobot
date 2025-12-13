@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-from multiprocessing import shared_memory
 from config_city import (
     TL_TOP_ROI,
     TL_BOTTOM_ROI,
@@ -10,8 +9,8 @@ from config_city import (
 import config_city
 
 class TrafficLightDetector:
-    def __init__(self, manager_dict):
-        self.manager_dict = manager_dict
+    def __init__(self):
+        pass
     
     def detect(self, frame):
         
@@ -87,20 +86,3 @@ class TrafficLightDetector:
                 break
         
         return light_color, debug_frame
-
-    def runner(self):
-        shm = shared_memory.SharedMemory(name="camera_frame")
-
-        frame = np.ndarray(
-            (480, 640, 3),
-            dtype=np.uint8,
-            buffer=shm.buf
-        )
-        while True:
-                frame = frame.copy()  
-                if frame is None:
-                    continue
-                color = self.detect(frame)[0]
-                if color is not None:
-                    self.manager_dict['last_color'] = color
-        

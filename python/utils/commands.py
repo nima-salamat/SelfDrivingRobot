@@ -2,7 +2,7 @@ import serial
 import threading
 import time
 from serial import SerialException
-from queue import Queue
+
 serial_lock = threading.Lock()
 
 class ArduinoConnection:
@@ -47,6 +47,7 @@ class ArduinoConnection:
                         self.serial_connection.flush()
                     except:
                         pass
+                    return True
             except Exception:
                 # reopen and retry
                 try:
@@ -54,6 +55,7 @@ class ArduinoConnection:
                 except:
                     pass
                 time.sleep(0.1)
+        return False
 
     def close(self):
         if self.serial_connection:
@@ -61,19 +63,3 @@ class ArduinoConnection:
                 self.serial_connection.close()
             except:
                 pass
-
-class ArduinoConnectionThreaded(ArduinoConnection):
-    def __init__(self):
-        super().__init__()
-        self.command_queue = Queue()
-        self.thread = threading.Thread(target=self.sender, args=(self.command_queue,))
-        self.thread.start()
-
-    def send_command(self, command):
-        self.command_queue.put(command)
-        
-    def sender(self, command_queue):
-        while True:
-            if not command_queue.empty():
-                command = command_queue.get()
-                super().send_command(command)
