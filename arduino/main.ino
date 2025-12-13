@@ -2,6 +2,7 @@
 #include <ctype.h>
 #include <UltrasonicSensor.h>
 #include <PulseQueue.h>
+#include "Encoder.h"
 
 // Motor pins
 int IN1 = 10;
@@ -13,11 +14,19 @@ int M2  = 13;
 Servo myServo;
 int SERVO_PIN = 9;
 
-// Reed switch
+// Encoder / Reed switch pin
 const int REED_PIN = 2;
-volatile int pulseCounter = 0;
-volatile unsigned long lastPulseMicros = 0;
-const unsigned long DEBOUNCE_US = 5000UL;
+
+// For Hall/reed use a non-zero debounce; for optical/laser set to 0.
+// HALL: keep DEBOUNCE_US non-zero (5000us) to filter mechanical bounce.
+// LASER: set DEBOUNCE_US to 0 (no debounce) and consider using RISING edge and external pull-up.
+const unsigned long DEBOUNCE_US = 5000UL; // HALL: 5000   LASER: use 0
+
+// Create Encoder instance
+// HALL: we initialize with debounce and FALLING (original code used FALLING).
+// LASER: change debounce to 0 and edge to RISING (or whatever your optical module needs).
+Encoder encoder(REED_PIN, DEBOUNCE_US, FALLING); // HALL: FALLING, debounce 5000
+// To switch to LASER: Encoder encoder(REED_PIN, 0, RISING); // LASER: no debounce, RISING recommended
 
 // Ultrasonic sensors
 const int ULTRA_LEFT_TRIG  = 4;
@@ -56,8 +65,11 @@ enum LaneState { LANE_NORMAL = 0, LANE_LEFT, LANE_RETURNING };
 LaneState laneState = LANE_NORMAL;
 unsigned long laneChangeStart = 0;
 
+// Serial input handling variables
+String inputString = "";
+bool stringComplete = false;
+
 // Function declarations
-void countPulse();
 bool looksLikePulseGroups(const String &line);
 void startMotorByPulses(char dirChar, int speedVal, int pulses, int servoAngle);
 void startServoMoveImmediate(int target);
@@ -74,9 +86,11 @@ void setup() {
   pinMode(IN2, OUTPUT);
   pinMode(M1, OUTPUT);
   pinMode(M2, OUTPUT);
-  pinMode(REED_PIN, INPUT_PULLUP);
 
-  attachInterrupt(digitalPinToInterrupt(REED_PIN), countPulse, FALLING);
+  // Encoder begin: configures pinMode and attaches ISR.
+  // HALL: Encoder was constructed with debounce (DEBOUNCE_US) and FALLING edge.
+  // LASER: If you switch to laser, set debounce to 0 and choose RISING edge, and optionally change pinMode handling in Encoder::begin() comment.
+  encoder.begin();
 
   ultraLeft.begin();
   ultraRight.begin();
@@ -86,19 +100,12 @@ void setup() {
   myServo.write(servoCurrent);
 }
 
-void countPulse() {
-  unsigned long now = micros();
-  if (now - lastPulseMicros >= DEBOUNCE_US) {
-    pulseCounter++;
-    lastPulseMicros = now;
-  }
+int getPulseCount() {
+  return encoder.getCount();
 }
 
-int getPulseCount() {
-  noInterrupts();
-  int cnt = pulseCounter;
-  interrupts();
-  return cnt;
+void resetPulseCount() {
+  encoder.reset();
 }
 
 void setMotorSpeed(int speed) {
@@ -132,7 +139,7 @@ void startServoMoveImmediate(int target) {
 
 void startMotorByPulses(char dirChar, int speedVal, int pulses, int servoAngle) {
   noInterrupts();
-  pulseCounter = 0;
+  resetPulseCount();
   interrupts();
   targetPulses = pulses;
   movingByPulses = true;
