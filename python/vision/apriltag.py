@@ -132,6 +132,7 @@ class ApriltagDetector:
             
             if frame is None:
                     continue
-            tag = frame.copy()
+            frame = frame.copy()
+            tag = self.detect(frame)[2]
             if tag is not None:
                 self.manager_dict['last_tag'] = tag
