@@ -12,6 +12,7 @@ import logging
 import cv2
 import time
 import threading
+import sys
 logging.disable(logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -161,16 +162,41 @@ class Robot:
             
             self.close()
             logger.info("exited")
-    
+            
+    def safe(self, func):
+        def wrapper(*args, **kwargs):
+            val =  None
+            try:
+                val = func(*args, **kwargs)
+            except Exception:
+                pass
+            finally:
+                return val
+        return wrapper
+        
     def close(self):
-        self.control.stop()
-        self.control.set_angle(90)
-        self.camera.release()
-        cv2.destroyAllWindows()
+        _ = self.safe
+        _(self.control.stop)()
+        _(self.control.set_angle)(90)
+        _(self.camera.release)()
+        
+        if config_city.DEBUG:
+            _(cv2.destroyAllWindows)()
+            
+        if config_city.STREAM:
+            try:
+                import requests
+                requests.post("http://127.0.0.1:5000/shutdown")
+            except Exception:
+                pass
+        
+            if flask_thread.is_alive():
+                flask_thread.join()
+        sys.exit(0)
 
 if __name__ == '__main__':
     if config_city.STREAM:
-        flask_thread = threading.Thread(target=start_stream, daemon=True)
+        flask_thread = threading.Thread(target=start_stream, daemon=False)
         flask_thread.start()
     robot = Robot()
     robot.run()
