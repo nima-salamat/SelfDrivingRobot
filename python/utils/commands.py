@@ -1,116 +1,117 @@
-import threading
-import time
+# simple_usb_serial.py
+
 import logging
-from jnius import autoclass, cast
+import sys
+import time
 
 logger = logging.getLogger(__name__)
-serial_lock = threading.Lock()
 
-PythonActivity = autoclass("org.kivy.android.PythonActivity")
-UsbManager = autoclass("android.hardware.usb.UsbManager")
-UsbDeviceConnection = autoclass("android.hardware.usb.UsbDeviceConnection")
-UsbSerialDevice = autoclass("com.felhr.usbserial.UsbSerialDevice")
-UsbSerialInterface = autoclass("com.felhr.usbserial.UsbSerialInterface")
-PendingIntent = autoclass("android.app.PendingIntent")
-Intent = autoclass("android.content.Intent")
-Context = autoclass("android.content.Context")
+try:
+    from kivy.utils import platform as _kivy_platform
+    platform = _kivy_platform
+except Exception:
+    platform = sys.platform
 
+if platform == "android":
+    from usb4a import usb
+    from usbserial4a import serial4a
+else:
+    import serial
 
 class ArduinoConnection:
-    def __init__(self, vendor_id=None, product_id=None, baudrate=115200, max_retries=3, reboot_wait=2.0):
-        self.vendor_id = vendor_id
-        self.product_id = product_id
-        self.baudrate = baudrate
-        self.max_retries = max_retries
-        self.reboot_wait = reboot_wait
-
-        self.usb_manager = cast("android.hardware.usb.UsbManager",
-                                PythonActivity.mActivity.getSystemService(Context.USB_SERVICE))
-        self.device = None
-        self.connection = None
+    """
+    Simple multi-platform USB/Serial connection.
+    Only sends commands. No reading.
+    """
+    def __init__(self):
         self.serial_port = None
 
-        self.init_usb_connection()
+    def scan_devices(self):
+        if platform == "android":
+            devlist = usb.get_usb_device_list()
+            return [d.getDeviceName() for d in devlist]
+        else:
+            from serial.tools import list_ports
+            ports = list_ports.comports()
+            return [p.device for p in ports]
 
-    def init_usb_connection(self):
-        try:
-            device_list = self.usb_manager.getDeviceList().values().toArray()
-            for d in device_list:
-                if (self.vendor_id is None or d.getVendorId() == self.vendor_id) and \
-                   (self.product_id is None or d.getProductId() == self.product_id):
-                    self.device = d
-                    break
-
-            if not self.device:
-                logger.error("Arduino USB device not found")
+    def open(self, device_name, baudrate=115200):
+        if platform == "android":
+            dev = usb.get_usb_device(device_name)
+            if not dev:
+                logger.error("Device not found: %s" % device_name)
                 return False
-
-            intent = PendingIntent.getBroadcast(PythonActivity.mActivity, 0,
-                                               Intent("com.example.USB_PERMISSION"), 0)
-            self.usb_manager.requestPermission(self.device, intent)
-
-            time.sleep(self.reboot_wait)
-
-            self.connection = self.usb_manager.openDevice(self.device)
-            if not self.connection:
-                logger.error("Failed to open USB device")
+            if not usb.has_usb_permission(dev):
+                usb.request_usb_permission(dev)
+                time.sleep(2)
+            self.serial_port = serial4a.get_serial_port(
+                device_name, baudrate, 8, 'N', 1, timeout=1
+            )
+        else:
+            try:
+                self.serial_port = serial.Serial(device_name, baudrate, timeout=1)
+            except Exception as e:
+                logger.error("Failed to open serial port: %s" % e)
                 return False
-
-            self.serial_port = UsbSerialDevice.createUsbSerialDevice(self.device, self.connection)
-            if self.serial_port is None:
-                logger.error("Failed to create UsbSerialDevice")
-                return False
-
-            if not self.serial_port.open():
-                logger.error("Failed to open serial port")
-                return False
-
-            self.serial_port.setBaudRate(self.baudrate)
-            self.serial_port.setDataBits(UsbSerialInterface.DATA_BITS_8)
-            self.serial_port.setStopBits(UsbSerialInterface.STOP_BITS_1)
-            self.serial_port.setParity(UsbSerialInterface.PARITY_NONE)
-            self.serial_port.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF)
-
-            logger.info("USB Serial connection established")
-            return True
-
-        except Exception as e:
-            logger.error(f"Error initializing USB Serial connection: {e}")
-            self.connection = None
-            self.serial_port = None
-            return False
+        return True
 
     def send_command(self, command):
+        if not self.serial_port:
+            logger.error("Serial port not open")
+            return False
         if isinstance(command, str):
             command = command.encode()
-
-        for _ in range(self.max_retries):
-            try:
-                with serial_lock:
-                    if not self.serial_port or not self.serial_port.isOpen():
-                        if not self.init_usb_connection():
-                            time.sleep(0.1)
-                            continue
-
-                    self.serial_port.write(command)
-                    return True
-            except Exception as e:
-                logger.warning(f"Send failed, retrying: {e}")
-                try:
-                    self.init_usb_connection()
-                except:
-                    pass
-                time.sleep(0.1)
-        return False
+        try:
+            self.serial_port.write(command)
+            return True
+        except Exception as e:
+            logger.error("send_command failed: %s" % e)
+            return False
 
     def close(self):
         try:
             if self.serial_port:
                 self.serial_port.close()
-            if self.connection:
-                self.connection.close()
-            self.serial_port = None
-            self.connection = None
-            logger.info("USB Serial connection closed")
-        except Exception as e:
-            logger.error(f"Error closing USB Serial: {e}")
+        except:
+            pass
+        self.serial_port = None
+
+
+# ---------------------- Example CLI ----------------------
+if __name__ == "__main__":
+    conn = ArduinoConnection()
+    devices = conn.scan_devices()
+    if not devices:
+        print("No devices found")
+        sys.exit(1)
+
+    print("Devices found:")
+    for i, d in enumerate(devices):
+        print(f"{i}: {d}")
+
+    choice = 0
+    try:
+        choice = int(input("Select device index (default 0): ") or "0")
+    except Exception:
+        pass
+    dev_name = devices[choice]
+
+    if not conn.open(dev_name):
+        print("Failed to open device")
+        sys.exit(1)
+
+    print("Device opened. Type commands to send. Type 'exit' to quit.")
+    try:
+        while True:
+            cmd = input("> ")
+            if cmd.lower() in ("exit", "quit"):
+                break
+            if conn.send_command(cmd + "\n"):
+                print(f"Sent: {cmd}")
+            else:
+                print(f"Failed to send: {cmd}")
+    except KeyboardInterrupt:
+        pass
+    finally:
+        conn.close()
+        print("Closed connection")

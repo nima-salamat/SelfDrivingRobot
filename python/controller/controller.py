@@ -4,6 +4,8 @@ from utils.commands import ArduinoConnection
 class RobotController:
     def __init__(self, min_interval=0.05):
         self.connection = ArduinoConnection()
+        devices = self.connection.scan_devices()
+        self.connection.open(devices[0])
         self.current_angle = 90
         self.current_speed = 0
         self.min_interval = min_interval
