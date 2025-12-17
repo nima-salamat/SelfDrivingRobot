@@ -1,6 +1,4 @@
 import logging
-import time
-import cv2
 import numpy as np
 from kivy.app import App
 from kivy.uix.image import Image
@@ -21,48 +19,46 @@ class Robot:
         self.vision = VisionProcessor()
 
     def run(self):
-        logger.info("starting")
         try:
-            while True:
-                frame = self.camera.capture_frame()
-                result = self.vision.detect(frame)
-                angle = result.get("steering_angle")
-                debug_frame = result["debug"]["combined"]
-                self.control.set_angle(angle)
-                self.control.set_speed(SPEED)
-                return debug_frame
-
-        except KeyboardInterrupt:
-            logger.error("error KeyboardInterrupt")
+            frame = self.camera.capture_frame()
+            if frame is None:
+                return None
+            result = self.vision.detect(frame)
+            angle = result.get("steering_angle")
+            debug_frame = result["debug"]["combined"]
+            self.control.set_angle(angle)
+            self.control.set_speed(SPEED)
+            return debug_frame
         except Exception as e:
-            logger.error(f"error {e}")
-        finally:
-            self.close()
+            logger.error(f"Robot run error: {e}")
+            return None
 
     def close(self):
         self.camera.release()
 
+
 class RobotApp(App):
     def build(self):
         self.robot = Robot()
-
         self.layout = BoxLayout(orientation='vertical')
-
         self.img = Image()
         self.layout.add_widget(self.img)
-
         Clock.schedule_interval(self.update, 1.0 / 30.0)  # 30 FPS
-
         return self.layout
 
     def update(self, dt):
         debug_frame = self.robot.run()
-
         if debug_frame is not None:
-            buf = debug_frame.tobytes()
+            # OpenCV frame is BGR, Kivy texture expects RGB
+            frame_rgb = debug_frame[:, :, ::-1]
+            buf = frame_rgb.tobytes()
             texture = self.img.texture
-            texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
+            if not texture:
+                self.img.texture = self.img.texture_create(size=(frame_rgb.shape[1], frame_rgb.shape[0]))
+                texture = self.img.texture
+            texture.blit_buffer(buf, colorfmt='rgb', bufferfmt='ubyte')
             self.img.texture = texture
+
 
 if __name__ == '__main__':
     RobotApp().run()
