@@ -1,4 +1,3 @@
-# simple_usb_serial.py
 
 import logging
 import sys
@@ -75,43 +74,3 @@ class ArduinoConnection:
         except:
             pass
         self.serial_port = None
-
-
-# ---------------------- Example CLI ----------------------
-if __name__ == "__main__":
-    conn = ArduinoConnection()
-    devices = conn.scan_devices()
-    if not devices:
-        print("No devices found")
-        sys.exit(1)
-
-    print("Devices found:")
-    for i, d in enumerate(devices):
-        print(f"{i}: {d}")
-
-    choice = 0
-    try:
-        choice = int(input("Select device index (default 0): ") or "0")
-    except Exception:
-        pass
-    dev_name = devices[choice]
-
-    if not conn.open(dev_name):
-        print("Failed to open device")
-        sys.exit(1)
-
-    print("Device opened. Type commands to send. Type 'exit' to quit.")
-    try:
-        while True:
-            cmd = input("> ")
-            if cmd.lower() in ("exit", "quit"):
-                break
-            if conn.send_command(cmd + "\n"):
-                print(f"Sent: {cmd}")
-            else:
-                print(f"Failed to send: {cmd}")
-    except KeyboardInterrupt:
-        pass
-    finally:
-        conn.close()
-        print("Closed connection")

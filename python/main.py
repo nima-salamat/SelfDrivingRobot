@@ -7,7 +7,9 @@ from kivy.clock import Clock
 from vision.camera import Camera
 from vision.vision_processing import VisionProcessor
 from controller import RobotController
+from kivy.graphics.texture import Texture
 from base_config import SPEED
+import time
 
 logging.disable(logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -26,8 +28,11 @@ class Robot:
             result = self.vision.detect(frame)
             angle = result.get("steering_angle")
             debug_frame = result["debug"]["combined"]
+            time.sleep(0.01)
             self.control.set_angle(angle)
+            time.sleep(0.01)
             self.control.set_speed(SPEED)
+            time.sleep(0.01)
             return debug_frame
         except Exception as e:
             logger.error(f"Robot run error: {e}")
@@ -35,6 +40,7 @@ class Robot:
 
     def close(self):
         self.camera.release()
+        self.control.connection.close()
 
 
 class RobotApp(App):
@@ -48,16 +54,21 @@ class RobotApp(App):
 
     def update(self, dt):
         debug_frame = self.robot.run()
-        if debug_frame is not None:
-            # OpenCV frame is BGR, Kivy texture expects RGB
-            frame_rgb = debug_frame[:, :, ::-1]
-            buf = frame_rgb.tobytes()
-            texture = self.img.texture
-            if not texture:
-                self.img.texture = self.img.texture_create(size=(frame_rgb.shape[1], frame_rgb.shape[0]))
-                texture = self.img.texture
-            texture.blit_buffer(buf, colorfmt='rgb', bufferfmt='ubyte')
-            self.img.texture = texture
+        if debug_frame is None:
+            return
+
+        frame_rgb = debug_frame[:, :, ::-1]  # BGR -> RGB
+        buf = frame_rgb.tobytes()
+
+        if not self.img.texture:
+            self.img.texture = Texture.create(
+                size=(frame_rgb.shape[1], frame_rgb.shape[0]),
+                colorfmt='rgb'
+            )
+            self.img.texture.flip_vertical()
+
+        self.img.texture.blit_buffer(buf, colorfmt='rgb', bufferfmt='ubyte')
+        self.img.canvas.ask_update()
 
 
 if __name__ == '__main__':
