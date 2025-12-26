@@ -12,6 +12,10 @@ import numpy as np
 class VisionProcessor:
     def __init__(self):
         self.last_steering = 90
+        self.rroi_unseen_counter = 0
+        self.lroi_unseen_counter = 0
+        self.max_unseen_counter = 10
+
 
     def _largest_mid_x(self, lines):
         if lines is None:
@@ -38,6 +42,9 @@ class VisionProcessor:
         rl_left, rl_right = int(RL_LEFT_ROI * width), int(RL_RIGHT_ROI * width)
         ll_top, ll_bottom = int(LL_TOP_ROI * height), int(LL_BOTTOM_ROI * height)
         ll_left, ll_right = int(LL_LEFT_ROI * width), int(LL_RIGHT_ROI * width)
+        
+        rl_right += (1 - RL_RIGHT_ROI) * 1 / self.max_unseen_counter * self.rroi_unseen_counter
+        ll_left += (0 - LL_LEFT_ROI) * 1 / self.max_unseen_counter * self.lroi_unseen_counter
 
         cw_top, cw_bottom = int(CW_TOP_ROI * height), int(CW_BOTTOM_ROI * height)
         cw_left, cw_right = int(CW_LEFT_ROI * width), int(CW_RIGHT_ROI * width)
@@ -125,22 +132,30 @@ class VisionProcessor:
         frame_center = (width * (RL_RIGHT_ROI + LL_LEFT_ROI) / 2)
         if (rl_x_mid_full is not None) and (ll_x_mid_full is not None):
             lane_type = "both"
+            self.rroi_unseen_counter -= 1
+            self.lroi_unseen_counter -= 1
+        
         elif (rl_x_mid_full is None) and (ll_x_mid_full is not None):
             lane_type = "only_left"
-            frame_center = (width * (RL_RIGHT_ROI + LL_LEFT_ROI) / 2) - 20
+            self.rroi_unseen_counter += 2
+            # frame_center = (width * (RL_RIGHT_ROI + LL_LEFT_ROI) / 2) - 20
         elif (rl_x_mid_full is not None) and (ll_x_mid_full is None):
             lane_type = "only_right"
+            self.lroi_unseen_counter += 2
             # frame_center = (width * (RL_RIGHT_ROI + LL_LEFT_ROI) / 2) - 20
         else:
             lane_type = "none"
-
+            self.rroi_unseen_counter += 2
+            self.lroi_unseen_counter += 2  
         
+        self.rroi_unseen_counter = max(0, min(self.max_unseen_counter, self.rroi_unseen_counter))
+        self.lroi_unseen_counter = max(0, min(self.max_unseen_counter, self.lroi_unseen_counter))
 
         rl_roi_center = (rl_left + rl_right) / 2.0
         ll_roi_center = (ll_left + ll_right) / 2.0
 
         if rl_x_mid_full is None and ll_x_mid_full is not None:
-            rl_x_mid_full = rl_roi_center
+            rl_x_mid_full = rl_roi_center + 5
         if ll_x_mid_full is None and rl_x_mid_full is not None:
             ll_x_mid_full = ll_roi_center
 
@@ -152,8 +167,10 @@ class VisionProcessor:
         error = frame_center - lane_center
         kp = LOW_KP if abs(error) < 25 else HIGH_KP
         steering_angle = 90.0 - kp * error
-        if lane_type == "none":
-            steering_angle = 150
+        
+        # if lane_type == "none":
+        #     steering_angle = 150
+        
         steering_angle = int(max(MIN_SERVO_ANGLE, min(MAX_SERVO_ANGLE, steering_angle)))
 
         # -------------------------
@@ -197,13 +214,6 @@ class VisionProcessor:
 
             # crosswalk text and paste cw_debug into the cw ROI for inspection
             cv2.putText(vis, f"crosswalk:{crosswalk}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,255), 2)
-
-            # if cw_debug is not None:
-            #     try:
-            #         vis[cw_top:cw_bottom, cw_left:cw_right] = cv2.resize(cw_debug, (cw_right - cw_left, cw_bottom - cw_top))
-            #     except Exception:
-            #         # if paste fails, ignore (still keep vis)
-            #         pass
 
             debug["rl_draw"] = rl_draw
             debug["ll_draw"] = ll_draw
