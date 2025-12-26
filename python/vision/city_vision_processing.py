@@ -3,7 +3,7 @@ from config_city import (
     RL_TOP_ROI, RL_BOTTOM_ROI, RL_RIGHT_ROI, RL_LEFT_ROI,
     LL_TOP_ROI, LL_BOTTOM_ROI, LL_RIGHT_ROI, LL_LEFT_ROI,
     CW_TOP_ROI, CW_BOTTOM_ROI, CW_RIGHT_ROI, CW_LEFT_ROI,
-    LOW_KP, HIGH_KP, MAX_SERVO_ANGLE, MIN_SERVO_ANGLE
+    MAX_SERVO_ANGLE, MIN_SERVO_ANGLE, SERVO_CENTER, SERVO_DIRECTION
 )
 import config_city
 import cv2
@@ -169,14 +169,23 @@ class VisionProcessor:
         
         error = frame_center - lane_center
         
+        
         if error < 0:
-            kp = 90 / abs(min_error)
+            kp = (180 - SERVO_CENTER) / abs(min_error)
         elif error > 0:
-            kp = 90 / abs(max_error)
+            kp = SERVO_CENTER / abs(max_error)
         else:
             kp = 0
+            
         # kp = LOW_KP if abs(error) < 25 else HIGH_KP
-        steering_angle = 90 - kp * error
+        if SERVO_DIRECTION == "ltr":
+            steering_angle = SERVO_CENTER - kp * error
+        elif SERVO_DIRECTION == "rtl":
+            steering_angle = SERVO_CENTER + kp * error
+        else:
+            # default assume ltr
+            steering_angle = SERVO_CENTER - kp * error
+                   
         
         # if lane_type == "none":
         #     steering_angle = 150
