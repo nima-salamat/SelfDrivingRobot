@@ -163,10 +163,20 @@ class VisionProcessor:
             lane_center = (rl_x_mid_full + ll_x_mid_full) / 2.0
         else:
             lane_center = frame_center
-
+            
+        min_error = frame_center - (ll_right + rl_right) / 2
+        max_error = frame_center - (ll_left + rl_left) / 2 
+        
         error = frame_center - lane_center
-        kp = LOW_KP if abs(error) < 25 else HIGH_KP
-        steering_angle = 90.0 - kp * error
+        
+        if error < 0:
+            kp = 90 / abs(min_error)
+        elif error > 0:
+            kp = 90 / abs(max_error)
+        else:
+            kp = 0
+        # kp = LOW_KP if abs(error) < 25 else HIGH_KP
+        steering_angle = 90 - kp * error
         
         # if lane_type == "none":
         #     steering_angle = 150
