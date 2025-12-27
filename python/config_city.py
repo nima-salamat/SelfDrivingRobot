@@ -5,19 +5,23 @@
 # --- Camera Defaults ---
 default_width = 380
 default_height = 230
+CAMERA_PITCH_DEG = -40 # camera angle in real world
+CAMERA_HEIGHT = 27 # height of camera in real world
+
 
 # Mode options: "picam" for Raspberry Pi Camera, "webcam" for USB camera
 CAMERA_MODE = "picam"
+
 
 # --- Lane Detection Regions of Interest (ROIs) ---
 # Values are normalized (0.0 – 1.0), multiplied by frame width/height
 # Tune these for your camera placement
 
 # Right lane ROI (fraction of frame)
-RL_TOP_ROI = 0.8   # start 40% down from top
-RL_BOTTOM_ROI = 1  # stop at 90% of frame height
-RL_LEFT_ROI = 0.6   # left boundary (55% of width)
-RL_RIGHT_ROI = 0.9 # right boundary (95% of width)
+RL_TOP_ROI = 0.8   # start 80% down from top
+RL_BOTTOM_ROI = 1  # stop at 100% of frame height
+RL_LEFT_ROI = 0.6   # left boundary (60% of width)
+RL_RIGHT_ROI = 0.9 # right boundary (90% of width)
 
 # Left lane ROI
 LL_TOP_ROI = 0.8
@@ -47,6 +51,7 @@ TL_RIGHT_ROI = 1.0
 # These are proportional gains for steering correction
 LOW_KP = 0.5 # smaller correction when error is small
 HIGH_KP = 0.7 # stronger correction when error is large
+# now high and low kp dont use in city vision  
 
 # --- Debugging ---
 # If True, will draw ROIs, lane midpoints, error, etc.
@@ -54,21 +59,31 @@ DEBUG = True
 
 # --- Arduino Serial Settings ---
 SERIAL_PORT = "/dev/ttyUSB0"   # adjust if different
-BAUD_RATE = 115200
+BAUD_RATE = 115200             # same as in your arduino etc 
 SERIAL_TIMEOUT = 0.1
 
 # --- Servo Angle Limits ---
 MIN_SERVO_ANGLE = 30.0
 MAX_SERVO_ANGLE = 150.0
+# --- Servo Default Config ---
+SERVO_CENTER = 90
+SERVO_DIRECTION = "ltr" # left = 0 and right = 180
 
 # --- Speed Config ---
 SPEED = 255
 
 # --- Crosswalk Setting ---
-CROSSWALK_SLEEP = 3
-CROSSWALK_THRESH_SPEND = 8
+CROSSWALK_SLEEP = 3 # sec  - after seeing crosswalk
+CROSSWALK_THRESH_SPEND = 8 # sec  - dont care if crosswalk seen before threshold time
 
 
-# 
+# Stream (enable/disable) 
 STREAM = True
-debug_frame_buffer = None
+debug_frame_buffer = None # global stream frame variable
+
+# Lane Width (distance between two lane in the track)
+LANE_WIDTH = 30 # cm
+
+# Static Threshold
+LANE_THRESHOLD = 180 # lane vision processing threshold
+CROSSWALK_THRESHOLD = 180 
