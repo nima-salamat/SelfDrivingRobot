@@ -179,6 +179,7 @@ class Robot:
         _(self.control.stop)()
         _(self.control.set_angle)(90)
         _(self.camera.release)()
+        _(self.control.connection.close)() # close serial connection
         
         if config_city.DEBUG:
             _(cv2.destroyAllWindows)()
