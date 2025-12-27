@@ -142,35 +142,32 @@ class VisionProcessor:
         cw_lines = []
 
         if cw_frame is not None:
-            
             gray = cv2.cvtColor(cw_frame, cv2.COLOR_BGR2GRAY)
-            _, gray = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY)
-            # gray = cv2.GaussianBlur(gray, (5, 5), 0)
-            # Step 3: Apply dilation to thicken the edges
-            # dilated_image = cv2.dilate(gray, None, iterations=1)
-
-            # Step 4: Apply erosion to refine the edges
-            # eroded_image = cv2.erode(dilated_image, None, iterations=1)
+            _, gray = cv2.threshold(gray, 160, 255, cv2.THRESH_BINARY)
             edges = cv2.Canny(gray, 100, 150)
-            lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=20,
-                        minLineLength=5, maxLineGap=5)
+
+            lsd = cv2.createLineSegmentDetector(0)
+            lines, _, _, _ = lsd.detect(edges)
             
             vertical = 0
             horizontal = 0
+            line_min_length = max(math.sqrt(math.pow(cw_right - cw_left, 2) + math.pow(cw_bottom - cw_top, 2)) / 20, 10)
             if lines is not None:
                 for line in lines:
-                    x0, y0, x1, y1 = line[0]
+                    x0, y0, x1, y1 = line[0] 
                     slope = (y1 - y0) / (x1 - x0 + 1e-6)
                     angle = abs(np.arctan(slope) * 180 / np.pi)
-
-                    if angle < 30:
-                        horizontal += 1
-                        cw_lines.append(line)
-                    elif angle > 60:
-                        vertical += 1
-                        cw_lines.append(line)
+                    length = math.hypot(x1 - x0, y1 - y0)
+                    
+                    if length >= line_min_length:
+                    
+                        if angle <= 30:
+                            horizontal += 1
+                            cw_lines.append(line)
+                        elif angle >= 60:
+                            vertical += 1
+                            cw_lines.append(line)
                         
-            
             if vertical > 3 and horizontal > 3:
                 crosswalk = True
 
