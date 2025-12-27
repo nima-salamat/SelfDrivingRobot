@@ -80,3 +80,7 @@ debug_frame_buffer = None # global stream frame
 
 # Lane Width (distance between two lane in the track)
 LANE_WIDTH = 30 # cm
+
+# Static Threshold
+LANE_THRESHOLD = 180 
+CROSSWALK_THRESHOLD = 180

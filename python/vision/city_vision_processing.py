@@ -3,7 +3,8 @@ from config_city import (
     LL_TOP_ROI, LL_BOTTOM_ROI, LL_RIGHT_ROI, LL_LEFT_ROI,
     CW_TOP_ROI, CW_BOTTOM_ROI, CW_RIGHT_ROI, CW_LEFT_ROI,
     MAX_SERVO_ANGLE, MIN_SERVO_ANGLE, SERVO_CENTER, SERVO_DIRECTION,
-    CAMERA_HEIGHT, CAMERA_PITCH_DEG, LANE_WIDTH
+    CAMERA_HEIGHT, CAMERA_PITCH_DEG, LANE_WIDTH, LANE_THRESHOLD,
+    CROSSWALK_THRESHOLD,
 )
 import config_city
 
@@ -116,7 +117,7 @@ class VisionProcessor:
                 return None, None, None
             roi_copy = roi.copy()
             gray = cv2.cvtColor(roi_copy, cv2.COLOR_BGR2GRAY)
-            _, gray = cv2.threshold(gray, 220, 255, cv2.THRESH_BINARY)
+            _, gray = cv2.threshold(gray, LANE_THRESHOLD, 255, cv2.THRESH_BINARY)
         
             #gray = cv2.GaussianBlur(gray, (9, 9), 0)
             # Step 3: Apply dilation to thicken the edges
@@ -143,7 +144,7 @@ class VisionProcessor:
 
         if cw_frame is not None:
             gray = cv2.cvtColor(cw_frame, cv2.COLOR_BGR2GRAY)
-            _, gray = cv2.threshold(gray, 160, 255, cv2.THRESH_BINARY)
+            _, gray = cv2.threshold(gray, CROSSWALK_THRESHOLD, 255, cv2.THRESH_BINARY)
             edges = cv2.Canny(gray, 100, 150)
 
             lsd = cv2.createLineSegmentDetector(0)
