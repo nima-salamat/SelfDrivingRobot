@@ -43,8 +43,8 @@ class VisionProcessor:
         ll_top, ll_bottom = int(LL_TOP_ROI * height), int(LL_BOTTOM_ROI * height)
         ll_left, ll_right = int(LL_LEFT_ROI * width), int(LL_RIGHT_ROI * width)
         
-        rl_right += (1 - RL_RIGHT_ROI) * 1 / self.max_unseen_counter * self.rroi_unseen_counter
-        ll_left += (0 - LL_LEFT_ROI) * 1 / self.max_unseen_counter * self.lroi_unseen_counter
+        rl_right += int((1 - RL_RIGHT_ROI) * width * 1 / self.max_unseen_counter * self.rroi_unseen_counter)
+        ll_left += int((0 - LL_LEFT_ROI) * width *1 / self.max_unseen_counter * self.lroi_unseen_counter)
 
         cw_top, cw_bottom = int(CW_TOP_ROI * height), int(CW_BOTTOM_ROI * height)
         cw_left, cw_right = int(CW_LEFT_ROI * width), int(CW_RIGHT_ROI * width)
