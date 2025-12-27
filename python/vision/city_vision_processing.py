@@ -139,9 +139,10 @@ class VisionProcessor:
         # CROSSWALK DETECTION USING LSD
         # -------------------------
         crosswalk = False
-        cw_debug = None
+        cw_lines = []
 
         if cw_frame is not None:
+            
             gray = cv2.cvtColor(cw_frame, cv2.COLOR_BGR2GRAY)
             _, gray = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY)
             # gray = cv2.GaussianBlur(gray, (5, 5), 0)
@@ -153,7 +154,7 @@ class VisionProcessor:
             edges = cv2.Canny(gray, 100, 150)
             lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=20,
                         minLineLength=5, maxLineGap=5)
-
+            
             vertical = 0
             horizontal = 0
             if lines is not None:
@@ -164,8 +165,11 @@ class VisionProcessor:
 
                     if angle < 30:
                         horizontal += 1
+                        cw_lines.append(line)
                     elif angle > 60:
                         vertical += 1
+                        cw_lines.append(line)
+                        
             
             if vertical > 3 and horizontal > 3:
                 crosswalk = True
@@ -247,7 +251,7 @@ class VisionProcessor:
         # -------------------------
         # DEBUG DRAWING
         # -------------------------
-        debug = {"rl_draw": None, "ll_draw": None, "combined": None, "crosswalk_draw": cw_debug}
+        debug = {"rl_draw": None, "ll_draw": None, "combined": None, "crosswalk_draw": None}
 
         if config_city.DEBUG or config_city.STREAM:
             vis = frame.copy()
@@ -255,7 +259,7 @@ class VisionProcessor:
             # ROI boxes
             cv2.rectangle(vis, (rl_left, rl_top), (rl_right, rl_bottom), (255, 0, 0), 1)
             cv2.rectangle(vis, (ll_left, ll_top), (ll_right, ll_bottom), (0, 255, 0), 1)
-            cv2.rectangle(vis, (cw_left, cw_top), (cw_right, cw_bottom), (0, 255, 255), 1)
+            cv2.rectangle(vis, (cw_left + 1, cw_top), (cw_right - 1, cw_bottom), (0, 255, 255), 1)
 
             # draw Hough lines from RL ROI (into global image)
             if rl_lines is not None:
@@ -282,12 +286,21 @@ class VisionProcessor:
             # show lane center / frame center
             cv2.line(vis, (int(frame_center), 0), (int(frame_center), height), (0,0,255), 1)
             cv2.line(vis, (int(lane_center), 0), (int(lane_center), height), (255,0,255), 1)
-
+            
             # crosswalk text and paste cw_debug into the cw ROI for inspection
             cv2.putText(vis, f"crosswalk:{crosswalk}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,255), 2)
+            
+            if cw_lines is not None:
+                for line in cw_lines:
+                    x1, y1, x2, y2 = line[0]
+                    if cw_frame is not None:
+                        cv2.line(cw_frame, (int(x1), int(y1)), (int(x2), int(y2)), (0,255,0), 1)
+                    cv2.line(vis, (cw_left + int(x1), cw_top + int(y1)), (cw_left + int(x2), cw_top + int(y2)), (0,255,255), 2)
+
 
             debug["rl_draw"] = rl_draw
             debug["ll_draw"] = ll_draw
+            debug["cw_draw"] = cw_frame
             debug["combined"] = vis
 
         return {
@@ -295,6 +308,5 @@ class VisionProcessor:
             "error": error,
             "lane_type": lane_type,
             "crosswalk": crosswalk,
-            "crosswalk_debug": cw_debug,
             "debug": debug
         }
