@@ -17,22 +17,60 @@ class VisionProcessor:
         self.max_unseen_counter = 10
 
 
-    def _largest_mid_x(self, lines):
+    def _best_mid_x(self, lines, roi_w, roi_h, side=""):
         if lines is None:
             return None
-        max_length = 0
-        x_mid = None
+        
+        roi_w_center = roi_w / 2
+        roi_h_bottom = roi_h
+        max_length = math.sqrt(math.pow(roi_w,2)+math.pow(roi_h,2))
+        
+        best_x_mid = None
+        best_score = -1
+        
         for line in lines:
             x1, y1, x2, y2 = line[0]
-            if x1 == x2:
-                continue
+
             slope = (y2 - y1) / (x2 - x1 + 1e-9)
-            if abs(slope) > 0.1:
-                length = math.hypot(x2 - x1, y2 - y1)
-                if length > max_length:
-                    max_length = length
-                    x_mid = (x1 + x2) / 2.0
-        return x_mid
+            angle = abs(math.degrees(math.atan(slope)))
+            
+            length = math.hypot(x2 - x1, y2 - y1)
+
+            x_mid = (x1 + x2) / 2
+            y_mid = (y1 + y2) / 2
+            
+            norm_length = min(length / max_length , 1)
+            norm_x_dist = min(abs(x_mid - roi_w_center) / roi_w_center, 1)
+            norm_y = min(y_mid / roi_h_bottom, 1)
+            
+            
+            def angle_target_score(angle, target_angle, sigma=15):
+                diff = abs(angle - target_angle)
+                return math.exp(-(diff ** 2) / (2 * sigma ** 2))
+
+            if side == "left":
+                angle_score = angle_target_score(angle, 45, sigma=20)
+            elif side == "right":
+                angle_score = angle_target_score(angle, 135, sigma=20)
+            else:
+                angle_score = angle_target_score(angle, 90, sigma=25)
+
+            
+
+            
+            score = (
+                0.4 * norm_length +
+                0.3 * (1 - norm_x_dist) +
+                0.2 * norm_y +
+                0.1 * angle_score
+            )
+            
+            
+            if score > best_score:
+                best_x_mid = x_mid
+                best_score = score
+
+        return best_x_mid
 
     def detect(self, frame):
         height, width = frame.shape[:2]
@@ -123,8 +161,8 @@ class VisionProcessor:
         # -------------------------
         # LANE MIDPOINT (unchanged)
         # -------------------------
-        rl_x_mid = self._largest_mid_x(rl_lines)
-        ll_x_mid = self._largest_mid_x(ll_lines)
+        rl_x_mid = self._best_mid_x(rl_lines, rl_right - rl_left, rl_bottom - rl_top, "right")
+        ll_x_mid = self._best_mid_x(ll_lines, ll_right - ll_left, ll_bottom - ll_top, "left")
 
         rl_x_mid_full = (rl_left + rl_x_mid) if rl_x_mid is not None else None
         ll_x_mid_full = (ll_left + ll_x_mid) if ll_x_mid is not None else None
