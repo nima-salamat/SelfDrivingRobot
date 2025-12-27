@@ -1,11 +1,13 @@
-import math
 from config_city import (
     RL_TOP_ROI, RL_BOTTOM_ROI, RL_RIGHT_ROI, RL_LEFT_ROI,
     LL_TOP_ROI, LL_BOTTOM_ROI, LL_RIGHT_ROI, LL_LEFT_ROI,
     CW_TOP_ROI, CW_BOTTOM_ROI, CW_RIGHT_ROI, CW_LEFT_ROI,
-    MAX_SERVO_ANGLE, MIN_SERVO_ANGLE, SERVO_CENTER, SERVO_DIRECTION
+    MAX_SERVO_ANGLE, MIN_SERVO_ANGLE, SERVO_CENTER, SERVO_DIRECTION,
+    CAMERA_HEIGHT, CAMERA_PITCH_DEG, LANE_WIDTH
 )
 import config_city
+
+import math
 import cv2
 import numpy as np
 
@@ -47,24 +49,36 @@ class VisionProcessor:
             def angle_target_score(angle, target_angle, sigma=15):
                 diff = abs(angle - target_angle)
                 return math.exp(-(diff ** 2) / (2 * sigma ** 2))
+       
+
+            def expected_lane_angle(side, h=CAMERA_HEIGHT, lane_width=LANE_WIDTH, camera_pitch_deg=CAMERA_PITCH_DEG):
+ 
+                camera_pitch = math.radians(camera_pitch_deg)
+
+                Yp = h / math.tan(-camera_pitch)  
+
+                alpha = math.degrees(math.atan((lane_width / 2) / Yp))
+
+                if side == "right":
+                    return 90 + alpha
+                else:
+                    return 90 - alpha
 
             if side == "left":
-                angle_score = angle_target_score(angle, 45, sigma=20)
+                target_angle = expected_lane_angle("left")
+                angle_score = angle_target_score(angle, target_angle, sigma=20)
             elif side == "right":
-                angle_score = angle_target_score(angle, 135, sigma=20)
+                target_angle = expected_lane_angle("right")
+                angle_score = angle_target_score(angle, target_angle, sigma=20)
             else:
                 angle_score = angle_target_score(angle, 90, sigma=25)
 
-            
-
-            
             score = (
                 0.4 * norm_length +
                 0.3 * (1 - norm_x_dist) +
                 0.2 * norm_y +
                 0.1 * angle_score
             )
-            
             
             if score > best_score:
                 best_x_mid = x_mid

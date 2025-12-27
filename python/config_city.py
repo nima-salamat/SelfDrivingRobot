@@ -5,9 +5,13 @@
 # --- Camera Defaults ---
 default_width = 380
 default_height = 230
+CAMERA_PITCH_DEG = -40 # camera angle in real world
+CAMERA_HEIGHT = 27 # height of camera in real world
+
 
 # Mode options: "picam" for Raspberry Pi Camera, "webcam" for USB camera
 CAMERA_MODE = "picam"
+
 
 # --- Lane Detection Regions of Interest (ROIs) ---
 # Values are normalized (0.0 – 1.0), multiplied by frame width/height
@@ -70,6 +74,9 @@ CROSSWALK_SLEEP = 3
 CROSSWALK_THRESH_SPEND = 8
 
 
-# 
+# Stream (enable/disable) 
 STREAM = True
-debug_frame_buffer = None
+debug_frame_buffer = None # global stream frame
+
+# Lane Width (distance between two lane in the track)
+LANE_WIDTH = 30 # cm
