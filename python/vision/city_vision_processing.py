@@ -13,7 +13,7 @@ import numpy as np
 
 class VisionProcessor:
     def __init__(self):
-        self.last_steering = 90
+        self.last_steering = SERVO_CENTER
         self.rroi_unseen_counter = 0
         self.lroi_unseen_counter = 0
         self.max_unseen_counter = 10
