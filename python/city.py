@@ -8,7 +8,7 @@ from vision.camera import Camera
 from vision.city_vision_processing import VisionProcessor
 from vision.apriltag import ApriltagDetector
 from controller import RobotController
-from config_city import SPEED, CROSSWALK_SLEEP, CROSSWALK_THRESH_SPEND, default_height, default_width
+from config_city import SPEED, CROSSWALK_SLEEP, CROSSWALK_THRESH_SPEND, default_height, default_width, SERVO_CENTER
 from stream import start_stream
 import logging
 import cv2
@@ -70,6 +70,11 @@ class Robot:
             while True:
                 
                 if config_city.RUN_LVL == "STOP":
+                    time.sleep(0.01)
+                    self.control.stop()
+                    time.sleep(0.01)
+                    self.control.set_angle(SERVO_CENTER)
+                    time.sleep(0.01)
                     
                     frame_at = self.camera.capture_frame(resize=False)
 
