@@ -1,12 +1,10 @@
 from config_city import (
-    RL_TOP_ROI, RL_BOTTOM_ROI, RL_RIGHT_ROI, RL_LEFT_ROI,
-    LL_TOP_ROI, LL_BOTTOM_ROI, LL_RIGHT_ROI, LL_LEFT_ROI,
     CW_TOP_ROI, CW_BOTTOM_ROI, CW_RIGHT_ROI, CW_LEFT_ROI,
     MAX_SERVO_ANGLE, MIN_SERVO_ANGLE, SERVO_CENTER, SERVO_DIRECTION,
     CAMERA_HEIGHT, CAMERA_PITCH_DEG, LANE_WIDTH, LANE_THRESHOLD,
     CROSSWALK_THRESHOLD,
 )
-import config_city
+import config_city as conf
 
 import math
 import cv2
@@ -91,13 +89,13 @@ class VisionProcessor:
         height, width = frame.shape[:2]
 
         # --- ROI pixel bounds ---
-        rl_top, rl_bottom = int(RL_TOP_ROI * height), int(RL_BOTTOM_ROI * height)
-        rl_left, rl_right = int(RL_LEFT_ROI * width), int(RL_RIGHT_ROI * width)
-        ll_top, ll_bottom = int(LL_TOP_ROI * height), int(LL_BOTTOM_ROI * height)
-        ll_left, ll_right = int(LL_LEFT_ROI * width), int(LL_RIGHT_ROI * width)
+        rl_top, rl_bottom = int(conf.RL_TOP_ROI * height), int(conf.RL_BOTTOM_ROI * height)
+        rl_left, rl_right = int(conf.RL_LEFT_ROI * width), int(conf.RL_RIGHT_ROI * width)
+        ll_top, ll_bottom = int(conf.LL_TOP_ROI * height), int(conf.LL_BOTTOM_ROI * height)
+        ll_left, ll_right = int(conf.LL_LEFT_ROI * width), int(conf.LL_RIGHT_ROI * width)
         
-        rl_right += int((1 - RL_RIGHT_ROI) * width * 1 / self.max_unseen_counter * self.rroi_unseen_counter)
-        ll_left += int((0 - LL_LEFT_ROI) * width *1 / self.max_unseen_counter * self.lroi_unseen_counter)
+        rl_right += int((1 - conf.RL_RIGHT_ROI) * width * 1 / self.max_unseen_counter * self.rroi_unseen_counter)
+        ll_left += int((0 - conf.LL_LEFT_ROI) * width *1 / self.max_unseen_counter * self.lroi_unseen_counter)
 
         cw_top, cw_bottom = int(CW_TOP_ROI * height), int(CW_BOTTOM_ROI * height)
         cw_left, cw_right = int(CW_LEFT_ROI * width), int(CW_RIGHT_ROI * width)
@@ -195,7 +193,7 @@ class VisionProcessor:
         rl_x_mid_full = (rl_left + rl_x_mid) if rl_x_mid is not None else None
         ll_x_mid_full = (ll_left + ll_x_mid) if ll_x_mid is not None else None
 
-        frame_center = (width * (RL_RIGHT_ROI + LL_LEFT_ROI) / 2)
+        frame_center = (ll_left + rl_right) / 2
         if (rl_x_mid_full is not None) and (ll_x_mid_full is not None):
             lane_type = "both"
             self.rroi_unseen_counter -= 1
@@ -263,7 +261,7 @@ class VisionProcessor:
         # -------------------------
         debug = {"rl_draw": None, "ll_draw": None, "combined": None, "crosswalk_draw": None}
 
-        if config_city.DEBUG or config_city.STREAM:
+        if conf.DEBUG or conf.STREAM:
             vis = frame.copy()
 
             # ROI boxes
