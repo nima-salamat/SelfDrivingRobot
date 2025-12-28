@@ -32,7 +32,7 @@ class Robot:
         self.last_tag = None
         self.stop_last_seen = None
         
-    def check_crosswalk(self, frame):
+    def check_crosswalk(self):
         now = time.time()
         if now - self.crosswalk_last_seen>= CROSSWALK_THRESH_SPEND:
             # Only reset the crosswalk timer if it's not already running
@@ -150,7 +150,7 @@ class Robot:
                     self.control.stop()
                     time.sleep(0.1)
                     frame_at = self.camera.capture_frame(resize=False)
-                    self.check_crosswalk(frame_at)
+                    self.check_crosswalk()
                     if config_city.STREAM:
                         config_city.debug_frame_buffer = frame_at
                     
@@ -159,7 +159,7 @@ class Robot:
                 if crosswalk and time.time() - self.crosswalk_last_seen >= CROSSWALK_THRESH_SPEND:
                     self.control.stop()
                     time.sleep(0.1)
-                    self.check_crosswalk(frame_at)
+                    self.check_crosswalk()
                     continue
                 
                 self.control.set_angle(angle)
