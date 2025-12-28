@@ -1,26 +1,27 @@
 import time
 from utils.commands import ArduinoConnection
+import base_config as temp_conf
+
+if temp_conf.CONFIG_MODULE is not None:
+    conf = temp_conf.CONFIG_MODULE
+else:
+    conf = temp_conf
 
 class RobotController:
-    def __init__(self, min_interval=0.05):
+    def __init__(self):
         self.connection = ArduinoConnection()
         self.current_angle = 90
         self.current_speed = 0
-        self.min_interval = min_interval
-        self._last_send_time = 0
 
     def _send_command(self, cmd: str):
         cmd = cmd.strip() + "\n" 
-        now = time.time()
-        # if now - self._last_send_time >= self.min_interval:
         self.connection.send_command(cmd)
-        self._last_send_time = now
 
     def servo(self, angle: int):
-        if angle < 30:
-            angle = 30
-        elif angle > 150:
-            angle = 150
+        if angle < conf.MIN_SERVO_ANGLE:
+            angle = conf.MIN_SERVO_ANGLE
+        elif angle > conf.MAX_SERVO_ANGLE:
+            angle = conf.MAX_SERVO_ANGLE
         
         self._send_command(f"servo {angle}")
 
