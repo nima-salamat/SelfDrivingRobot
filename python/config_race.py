@@ -52,8 +52,8 @@ BAUD_RATE = 115200
 SERIAL_TIMEOUT = 0.1
 
 # --- Servo Angle Limits ---
-MIN_SERVO_ANGLE = 30.0
-MAX_SERVO_ANGLE = 150.0
+MIN_SERVO_ANGLE = 55.0
+MAX_SERVO_ANGLE = 125.0
 
 # --- Speed Config ---
 SPEED = 255
@@ -61,3 +61,14 @@ SPEED = 255
 # --- Crosswalk Setting ---
 CROSSWALK_SLEEP = 3
 CROSSWALK_THRESH_SPEND = 10
+
+# Stream (enable/disable) 
+STREAM = True
+debug_frame_buffer = None # global stream frame variable
+
+# Static Threshold
+LANE_THRESHOLD = 180 # lane vision processing threshold
+CROSSWALK_THRESHOLD = 180 
+
+# Run Level
+RUN_LVL = "MOVE" # it can be MOVE or STOP

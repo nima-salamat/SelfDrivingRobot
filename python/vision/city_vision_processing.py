@@ -1,12 +1,9 @@
 from config_city import (
-    RL_TOP_ROI, RL_BOTTOM_ROI, RL_RIGHT_ROI, RL_LEFT_ROI,
-    LL_TOP_ROI, LL_BOTTOM_ROI, LL_RIGHT_ROI, LL_LEFT_ROI,
-    CW_TOP_ROI, CW_BOTTOM_ROI, CW_RIGHT_ROI, CW_LEFT_ROI,
     MAX_SERVO_ANGLE, MIN_SERVO_ANGLE, SERVO_CENTER, SERVO_DIRECTION,
-    CAMERA_HEIGHT, CAMERA_PITCH_DEG, LANE_WIDTH, LANE_THRESHOLD,
-    CROSSWALK_THRESHOLD,
+    CAMERA_HEIGHT, CAMERA_PITCH_DEG, LANE_WIDTH
 )
-import config_city
+
+import config_city as conf
 
 import math
 import cv2
@@ -91,16 +88,16 @@ class VisionProcessor:
         height, width = frame.shape[:2]
 
         # --- ROI pixel bounds ---
-        rl_top, rl_bottom = int(RL_TOP_ROI * height), int(RL_BOTTOM_ROI * height)
-        rl_left, rl_right = int(RL_LEFT_ROI * width), int(RL_RIGHT_ROI * width)
-        ll_top, ll_bottom = int(LL_TOP_ROI * height), int(LL_BOTTOM_ROI * height)
-        ll_left, ll_right = int(LL_LEFT_ROI * width), int(LL_RIGHT_ROI * width)
+        rl_top, rl_bottom = int(conf.RL_TOP_ROI * height), int(conf.RL_BOTTOM_ROI * height)
+        rl_left, rl_right = int(conf.RL_LEFT_ROI * width), int(conf.RL_RIGHT_ROI * width)
+        ll_top, ll_bottom = int(conf.LL_TOP_ROI * height), int(conf.LL_BOTTOM_ROI * height)
+        ll_left, ll_right = int(conf.LL_LEFT_ROI * width), int(conf.LL_RIGHT_ROI * width)
         
-        rl_right += int((1 - RL_RIGHT_ROI) * width * 1 / self.max_unseen_counter * self.rroi_unseen_counter)
-        ll_left += int((0 - LL_LEFT_ROI) * width *1 / self.max_unseen_counter * self.lroi_unseen_counter)
+        rl_right += int((1 - conf.RL_RIGHT_ROI) * width * 1 / self.max_unseen_counter * self.rroi_unseen_counter)
+        ll_left += int((0 - conf.LL_LEFT_ROI) * width *1 / self.max_unseen_counter * self.lroi_unseen_counter)
 
-        cw_top, cw_bottom = int(CW_TOP_ROI * height), int(CW_BOTTOM_ROI * height)
-        cw_left, cw_right = int(CW_LEFT_ROI * width), int(CW_RIGHT_ROI * width)
+        cw_top, cw_bottom = int(conf.CW_TOP_ROI * height), int(conf.CW_BOTTOM_ROI * height)
+        cw_left, cw_right = int(conf.CW_LEFT_ROI * width), int(conf.CW_RIGHT_ROI * width)
 
         # --- Crop ROIs (ROI-local coordinate space) ---
         rl_frame = frame[rl_top:rl_bottom, rl_left:rl_right].copy()
@@ -117,7 +114,7 @@ class VisionProcessor:
                 return None, None, None
             roi_copy = roi.copy()
             gray = cv2.cvtColor(roi_copy, cv2.COLOR_BGR2GRAY)
-            _, gray = cv2.threshold(gray, LANE_THRESHOLD, 255, cv2.THRESH_BINARY)
+            _, gray = cv2.threshold(gray, conf.LANE_THRESHOLD, 255, cv2.THRESH_BINARY)
         
             #gray = cv2.GaussianBlur(gray, (9, 9), 0)
             # Step 3: Apply dilation to thicken the edges
@@ -144,7 +141,7 @@ class VisionProcessor:
 
         if cw_frame is not None:
             gray = cv2.cvtColor(cw_frame, cv2.COLOR_BGR2GRAY)
-            _, gray = cv2.threshold(gray, CROSSWALK_THRESHOLD, 255, cv2.THRESH_BINARY)
+            _, gray = cv2.threshold(gray, conf.CROSSWALK_THRESHOLD, 255, cv2.THRESH_BINARY)
             edges = cv2.Canny(gray, 100, 150)
 
             lsd = cv2.createLineSegmentDetector(0)
@@ -152,7 +149,10 @@ class VisionProcessor:
             
             vertical = 0
             horizontal = 0
-            line_min_length = max(math.sqrt(math.pow(cw_right - cw_left, 2) + math.pow(cw_bottom - cw_top, 2)) / 20, 10)
+            cw_roi_diagonal = math.sqrt(math.pow(cw_right - cw_left, 2) + math.pow(cw_bottom - cw_top, 2))
+            crosswalk_pixel_dist = (4 / 5) * (cw_bottom - cw_top) # number of pixels distance before horizontal line of crosswalk
+            line_min_length = max(cw_roi_diagonal / 20, 10)
+            lowest_horizontal_line = None
             if lines is not None:
                 for line in lines:
                     x0, y0, x1, y1 = line[0] 
@@ -165,13 +165,22 @@ class VisionProcessor:
                         if angle <= 30:
                             horizontal += 1
                             cw_lines.append(line)
+                            if lowest_horizontal_line is not None:
+                                if max(y0, y1) > max(lowest_horizontal_line[0][1],lowest_horizontal_line[0][3]):
+                                    lowest_horizontal_line = line
+                            else:
+                                lowest_horizontal_line = line
+                                    
                         elif angle >= 60:
                             vertical += 1
                             cw_lines.append(line)
                         
             if vertical > 3 and horizontal > 3:
-                crosswalk = True
-
+                if lowest_horizontal_line is not None:
+                    if max(lowest_horizontal_line[0][1],lowest_horizontal_line[0][3]) > crosswalk_pixel_dist:
+                        crosswalk = True
+            
+                
 
                             
         # -------------------------
@@ -183,7 +192,7 @@ class VisionProcessor:
         rl_x_mid_full = (rl_left + rl_x_mid) if rl_x_mid is not None else None
         ll_x_mid_full = (ll_left + ll_x_mid) if ll_x_mid is not None else None
 
-        frame_center = (width * (RL_RIGHT_ROI + LL_LEFT_ROI) / 2)
+        frame_center = (ll_left + rl_right) / 2
         if (rl_x_mid_full is not None) and (ll_x_mid_full is not None):
             lane_type = "both"
             self.rroi_unseen_counter -= 1
@@ -251,7 +260,7 @@ class VisionProcessor:
         # -------------------------
         debug = {"rl_draw": None, "ll_draw": None, "combined": None, "crosswalk_draw": None}
 
-        if config_city.DEBUG or config_city.STREAM:
+        if conf.DEBUG or conf.STREAM:
             vis = frame.copy()
 
             # ROI boxes

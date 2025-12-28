@@ -1,11 +1,13 @@
 import base_config
+import config_race
 base_config.MODE="race"
+base_config.CONFIG_MODULE = config_race
+
 from vision.camera import Camera
 from vision.race_vision_processing import VisionProcessor
 from vision.apriltag import ApriltagDetector
 from controller import RobotController
 from config_race import SPEED, default_height, default_width
-import config_race
 import logging
 import cv2
 import time

@@ -1,24 +1,12 @@
 import cv2
 from cv2 import aruco
-import base_config
-import config_city
-import config_race
-if base_config.MODE == "main":
-    conf_file = base_config
-elif base_config.MODE == "city":
-    conf_file = config_city
+import base_config as temp_conf
 
-elif base_config.MODE == "race":
-    conf_file = config_race
+if temp_conf.CONFIG_MODULE is not None:
+    conf = temp_conf.CONFIG_MODULE
 else:
-    conf_file = base_config
-        
-AT_TOP_ROI, AT_BOTTOM_ROI, AT_LEFT_ROI, AT_RIGHT_ROI = (
-    conf_file.AT_TOP_ROI,
-    conf_file.AT_BOTTOM_ROI,
-    conf_file.AT_LEFT_ROI,
-    conf_file.AT_RIGHT_ROI
-)
+    conf = temp_conf
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -38,10 +26,10 @@ class ApriltagDetector:
         # -----------------------------
         # 1) Crop ROI from the frame
         # -----------------------------
-        x1 = int(AT_LEFT_ROI * w)
-        y1 = int(AT_TOP_ROI * h)
-        x2 = int(AT_RIGHT_ROI * w)
-        y2 = int(AT_BOTTOM_ROI * h)
+        x1 = int(conf.AT_LEFT_ROI * w)
+        y1 = int(conf.AT_TOP_ROI * h)
+        x2 = int(conf.AT_RIGHT_ROI * w)
+        y2 = int(conf.AT_BOTTOM_ROI * h)
 
         roi = frame[y1:y2, x1:x2]
 
