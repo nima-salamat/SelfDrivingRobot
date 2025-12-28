@@ -1,11 +1,14 @@
 import base_config
+import config_city 
 base_config.MODE="city"
+base_config.CONFIG_MODULE = config_city
+
+
 from vision.camera import Camera
 from vision.city_vision_processing import VisionProcessor
 from vision.apriltag import ApriltagDetector
 from controller import RobotController
 from config_city import SPEED, CROSSWALK_SLEEP, CROSSWALK_THRESH_SPEND, default_height, default_width
-import config_city 
 from stream import start_stream
 import logging
 import cv2
