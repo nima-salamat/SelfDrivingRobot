@@ -191,11 +191,11 @@ canvas{width:100%;height:auto;border-radius:8px;display:block;background:#000}
       <div class="section-title">Advanced Settings (Confirm to apply)</div>
       <div class="form-row">
         <label class="label">LANE_THRESHOLD</label>
-        <input id="lane_threshold" type="number" step="1" min="0" value="{{ advanced.LANE_THRESHOLD }}">
+        <input id="lane_threshold" type="number" min="0" max="255" step="1" value="{{ advanced.LANE_THRESHOLD }}">
       </div>
       <div class="form-row">
         <label class="label">CROSSWALK_THRESHOLD</label>
-        <input id="cross_thresh" type="number" step="1" min="0" value="{{ advanced.CROSSWALK_THRESHOLD }}">
+        <input id="cross_thresh" type="number" min="0" max="255" step="1" value="{{ advanced.CROSSWALK_THRESHOLD }}">
       </div>
       <div class="form-row">
         <label class="label">CROSSWALK_SLEEP (sec)</label>
@@ -802,9 +802,11 @@ def set_advanced():
     try:
         if "LANE_THRESHOLD" in data:
             val = int(data["LANE_THRESHOLD"])
+            val = max(0, min(255, val))
             setattr(conf, "LANE_THRESHOLD", val); updated["LANE_THRESHOLD"] = val
         if "CROSSWALK_THRESHOLD" in data:
             val = int(data["CROSSWALK_THRESHOLD"])
+            val = max(0, min(255, val))
             setattr(conf, "CROSSWALK_THRESHOLD", val); updated["CROSSWALK_THRESHOLD"] = val
         if "CROSSWALK_SLEEP" in data:
             val = float(data["CROSSWALK_SLEEP"])
