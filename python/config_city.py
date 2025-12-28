@@ -63,8 +63,8 @@ BAUD_RATE = 115200             # same as in your arduino etc
 SERIAL_TIMEOUT = 0.1
 
 # --- Servo Angle Limits ---
-MIN_SERVO_ANGLE = 30.0
-MAX_SERVO_ANGLE = 150.0
+MIN_SERVO_ANGLE = 55.0
+MAX_SERVO_ANGLE = 125.0
 # --- Servo Default Config ---
 SERVO_CENTER = 90
 SERVO_DIRECTION = "ltr" # left = 0 and right = 180
