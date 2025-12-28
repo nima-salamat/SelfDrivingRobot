@@ -152,7 +152,10 @@ class VisionProcessor:
             
             vertical = 0
             horizontal = 0
-            line_min_length = max(math.sqrt(math.pow(cw_right - cw_left, 2) + math.pow(cw_bottom - cw_top, 2)) / 20, 10)
+            cw_roi_diagonal = math.sqrt(math.pow(cw_right - cw_left, 2) + math.pow(cw_bottom - cw_top, 2))
+            crosswalk_pixel_dist = (4 / 5) * (cw_bottom - cw_top) # number of pixels distance before horizontal line of crosswalk
+            line_min_length = max(cw_roi_diagonal / 20, 10)
+            lowest_horizontal_line = None
             if lines is not None:
                 for line in lines:
                     x0, y0, x1, y1 = line[0] 
@@ -165,13 +168,22 @@ class VisionProcessor:
                         if angle <= 30:
                             horizontal += 1
                             cw_lines.append(line)
+                            if lowest_horizontal_line is not None:
+                                if max(y0, y1) > max(lowest_horizontal_line[0][1],lowest_horizontal_line[0][3]):
+                                    lowest_horizontal_line = line
+                            else:
+                                lowest_horizontal_line = line
+                                    
                         elif angle >= 60:
                             vertical += 1
                             cw_lines.append(line)
                         
             if vertical > 3 and horizontal > 3:
-                crosswalk = True
-
+                if lowest_horizontal_line is not None:
+                    if max(lowest_horizontal_line[0][1],lowest_horizontal_line[0][3]) > crosswalk_pixel_dist:
+                        crosswalk = True
+            
+                
 
                             
         # -------------------------
