@@ -56,7 +56,10 @@ class ArduinoConnection:
                     pass
                 time.sleep(0.1)
         return False
-
+    
+    def read_command(self):
+        return self.serial_connection.read().decode("utf-8")
+    
     def close(self):
         if self.serial_connection:
             try:
