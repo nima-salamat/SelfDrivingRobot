@@ -58,7 +58,10 @@ class ArduinoConnection:
         return False
     
     def read_command(self):
-        return self.serial_connection.read().decode("utf-8")
+        if self.serial_connection and self.serial_connection.is_open:
+            return self.serial_connection.readline().decode("utf-8").strip()
+        return ""
+
     
     def close(self):
         if self.serial_connection:
