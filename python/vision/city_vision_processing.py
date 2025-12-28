@@ -1,9 +1,8 @@
 from config_city import (
-    CW_TOP_ROI, CW_BOTTOM_ROI, CW_RIGHT_ROI, CW_LEFT_ROI,
     MAX_SERVO_ANGLE, MIN_SERVO_ANGLE, SERVO_CENTER, SERVO_DIRECTION,
-    CAMERA_HEIGHT, CAMERA_PITCH_DEG, LANE_WIDTH, LANE_THRESHOLD,
-    CROSSWALK_THRESHOLD,
+    CAMERA_HEIGHT, CAMERA_PITCH_DEG, LANE_WIDTH
 )
+
 import config_city as conf
 
 import math
@@ -97,8 +96,8 @@ class VisionProcessor:
         rl_right += int((1 - conf.RL_RIGHT_ROI) * width * 1 / self.max_unseen_counter * self.rroi_unseen_counter)
         ll_left += int((0 - conf.LL_LEFT_ROI) * width *1 / self.max_unseen_counter * self.lroi_unseen_counter)
 
-        cw_top, cw_bottom = int(CW_TOP_ROI * height), int(CW_BOTTOM_ROI * height)
-        cw_left, cw_right = int(CW_LEFT_ROI * width), int(CW_RIGHT_ROI * width)
+        cw_top, cw_bottom = int(conf.CW_TOP_ROI * height), int(conf.CW_BOTTOM_ROI * height)
+        cw_left, cw_right = int(conf.CW_LEFT_ROI * width), int(conf.CW_RIGHT_ROI * width)
 
         # --- Crop ROIs (ROI-local coordinate space) ---
         rl_frame = frame[rl_top:rl_bottom, rl_left:rl_right].copy()
@@ -115,7 +114,7 @@ class VisionProcessor:
                 return None, None, None
             roi_copy = roi.copy()
             gray = cv2.cvtColor(roi_copy, cv2.COLOR_BGR2GRAY)
-            _, gray = cv2.threshold(gray, LANE_THRESHOLD, 255, cv2.THRESH_BINARY)
+            _, gray = cv2.threshold(gray, conf.LANE_THRESHOLD, 255, cv2.THRESH_BINARY)
         
             #gray = cv2.GaussianBlur(gray, (9, 9), 0)
             # Step 3: Apply dilation to thicken the edges
@@ -142,7 +141,7 @@ class VisionProcessor:
 
         if cw_frame is not None:
             gray = cv2.cvtColor(cw_frame, cv2.COLOR_BGR2GRAY)
-            _, gray = cv2.threshold(gray, CROSSWALK_THRESHOLD, 255, cv2.THRESH_BINARY)
+            _, gray = cv2.threshold(gray, conf.CROSSWALK_THRESHOLD, 255, cv2.THRESH_BINARY)
             edges = cv2.Canny(gray, 100, 150)
 
             lsd = cv2.createLineSegmentDetector(0)
