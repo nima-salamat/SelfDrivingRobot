@@ -87,3 +87,6 @@ LANE_WIDTH = 30 # cm
 # Static Threshold
 LANE_THRESHOLD = 180 # lane vision processing threshold
 CROSSWALK_THRESHOLD = 180 
+
+# Run Level 
+RUN_LVL = "MOVE" # it can be MOVE or STOP

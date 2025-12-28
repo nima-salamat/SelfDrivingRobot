@@ -68,6 +68,27 @@ class Robot:
         prev_time = time.time()
         try:
             while True:
+                
+                if config_city.RUN_LVL == "STOP":
+                    
+                    frame_at = self.camera.capture_frame(resize=False)
+
+                    frame = cv2.resize(frame_at, (default_width, default_height), interpolation=cv2.INTER_AREA)
+
+                    result = self.vision.detect(frame)
+                    
+                    if config_city.STREAM:
+                        curr_time = time.time()
+                        fps = 1.0 / (curr_time - prev_time)
+                        prev_time = curr_time
+                        debug = result.get("debug") or {}
+                        display_frame = debug.get("combined").copy()
+                        cv2.putText(display_frame, f"FPS: {fps:.1f}", (10, 30),
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                        config_city.debug_frame_buffer = display_frame
+                    continue
+                
+                
                 tag = False
                 if config_city.DEBUG:
                     cv2.waitKey(1)
