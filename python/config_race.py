@@ -65,3 +65,10 @@ CROSSWALK_THRESH_SPEND = 10
 # Stream (enable/disable) 
 STREAM = True
 debug_frame_buffer = None # global stream frame variable
+
+# Static Threshold
+LANE_THRESHOLD = 180 # lane vision processing threshold
+CROSSWALK_THRESHOLD = 180 
+
+# Run Level
+RUN_LVL = "MOVE" # it can be MOVE or STOP
