@@ -90,3 +90,7 @@ CROSSWALK_THRESHOLD = 180
 
 # Run Level 
 RUN_LVL = "MOVE" # it can be MOVE or STOP
+
+
+# Change Configs based on json file
+CHANGE_WITH_JSON = False

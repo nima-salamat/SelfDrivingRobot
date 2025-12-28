@@ -2,13 +2,19 @@ import base_config
 import config_city 
 base_config.MODE="city"
 base_config.CONFIG_MODULE = config_city
-
-
+import os
+import json
+if config_city.CHANGE_WITH_JSON:
+    if os.path.exists("city.json"):
+        with open("city.json", "r") as f:
+            configs = json.loads(f.read())
+            for conf_name, value in configs.items():
+                setattr(config_city, conf_name, value)
 from vision.camera import Camera
 from vision.city_vision_processing import VisionProcessor
 from vision.apriltag import ApriltagDetector
 from controller import RobotController
-from config_city import SPEED, CROSSWALK_SLEEP, CROSSWALK_THRESH_SPEND, default_height, default_width, SERVO_CENTER
+from config_city import SPEED, default_height, default_width, SERVO_CENTER
 from stream import start_stream
 import logging
 import cv2
@@ -34,7 +40,7 @@ class Robot:
         
     def check_crosswalk(self):
         now = time.time()
-        if now - self.crosswalk_last_seen>= CROSSWALK_THRESH_SPEND:
+        if now - self.crosswalk_last_seen>= config_city.CROSSWALK_THRESH_SPEND:
             # Only reset the crosswalk timer if it's not already running
             self.crosswalk_time_start = now
             self.crosswalk_last_seen = now
@@ -42,7 +48,7 @@ class Robot:
         # If crosswalk timer is running, check for elapsed time
         if self.crosswalk_time_start != 0:
             elapsed = now - self.crosswalk_time_start
-            if elapsed >= CROSSWALK_SLEEP:
+            if elapsed >= config_city.CROSSWALK_SLEEP:
                 self.crosswalk_time_start = 0
                 logger.debug(f"navigate with tag: {self.last_tag}")
                 # Navigate based on last tag detected
@@ -156,7 +162,7 @@ class Robot:
                     
                     continue
                 
-                if crosswalk and time.time() - self.crosswalk_last_seen >= CROSSWALK_THRESH_SPEND:
+                if crosswalk and time.time() - self.crosswalk_last_seen >= config_city.CROSSWALK_THRESH_SPEND:
                     self.control.stop()
                     time.sleep(0.1)
                     self.check_crosswalk()
