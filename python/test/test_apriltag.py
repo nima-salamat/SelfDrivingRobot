@@ -1,3 +1,8 @@
+import sys
+import os
+prev_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(prev_dir)
+
 import cv2
 from vision.camera import Camera
 from vision.apriltag import ApriltagDetector 
