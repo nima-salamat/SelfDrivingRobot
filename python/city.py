@@ -13,7 +13,7 @@ if config_city.CHANGE_WITH_JSON:
 from vision.camera import Camera
 from vision.city_vision_processing import VisionProcessor
 from vision.apriltag import ApriltagDetector
-from controller import RobotController
+from controller import controller
 from config_city import SPEED, default_height, default_width, SERVO_CENTER
 from stream import start_stream
 import logging
@@ -29,7 +29,7 @@ config_city.DEBUG = False
 class Robot:
     def __init__(self):
         self.camera = Camera()
-        self.control = RobotController()
+        self.control = controller
 
         self.vision = VisionProcessor()
         self.apriltag_detector = ApriltagDetector()
@@ -98,7 +98,6 @@ class Robot:
                                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
                         config_city.debug_frame_buffer = display_frame
                     continue
-                
                 
                 tag = False
                 if config_city.DEBUG:

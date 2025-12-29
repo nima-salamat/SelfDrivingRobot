@@ -6,7 +6,7 @@ base_config.CONFIG_MODULE = config_race
 from vision.camera import Camera
 from vision.race_vision_processing import VisionProcessor
 from vision.apriltag import ApriltagDetector
-from controller import RobotController
+from controller import controller
 from config_race import SPEED, default_height, default_width
 import logging
 import cv2
@@ -19,7 +19,7 @@ config_race.DEBUG = True
 class Robot:
     def __init__(self):
         self.camera = Camera()
-        self.control = RobotController()
+        self.control = controller
         self.vision = VisionProcessor()
         self.apriltag_detector = ApriltagDetector()
         self.stop_last_seen = None

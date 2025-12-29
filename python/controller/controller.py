@@ -87,5 +87,5 @@ class RobotController:
         return dict()
             
         
-        
-    
+
+controller = RobotController()
