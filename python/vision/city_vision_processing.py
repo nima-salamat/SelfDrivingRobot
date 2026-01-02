@@ -184,8 +184,8 @@ class VisionProcessor:
         # -------------------------
         # LANE MIDPOINT (unchanged)
         # -------------------------
-        rl_x_mid = self._best_mid_x(rl_lines, width * abs(conf.RL_RIGHT_ROII - conf.RL_LEFT_ROI), height * abs(conf.RL_BOTTOM_ROI - conf.RL_TOP_ROI), "right")
-        ll_x_mid = self._best_mid_x(ll_lines, width * abs(conf.LL_RIGHT_ROII - conf.LL_LEFT_ROI), height * abs(conf.LL_BOTTOM_ROI - conf.LL_TOP_ROI), "left")
+        rl_x_mid = self._best_mid_x(rl_lines, width * abs(conf.RL_RIGHT_ROI - conf.RL_LEFT_ROI), height * abs(conf.RL_BOTTOM_ROI - conf.RL_TOP_ROI), "right")
+        ll_x_mid = self._best_mid_x(ll_lines, width * abs(conf.LL_RIGHT_ROI - conf.LL_LEFT_ROI), height * abs(conf.LL_BOTTOM_ROI - conf.LL_TOP_ROI), "left")
 
         rl_x_mid_full = (rl_left + rl_x_mid) if rl_x_mid is not None else None
         ll_x_mid_full = (ll_left + ll_x_mid) if ll_x_mid is not None else None
