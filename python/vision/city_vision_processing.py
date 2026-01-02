@@ -40,14 +40,12 @@ class VisionProcessor:
             y_mid = (y1 + y2) / 2
             
             norm_length = min(length / max_length , 1)
-            norm_x_dist = min(abs(x_mid - roi_w_center) / roi_w_center, 1)
             norm_y = min(y_mid / roi_h_bottom, 1)
-            
+            norm_x_dist = min(1 - abs(x_mid - roi_w_center) / roi_w_center, 1)
             
             def angle_target_score(angle, target_angle, sigma=15):
                 diff = abs(angle - target_angle)
                 return math.exp(-(diff ** 2) / (2 * sigma ** 2))
-       
 
             def expected_lane_angle(side, h=CAMERA_HEIGHT, lane_width=LANE_WIDTH, camera_pitch_deg=CAMERA_PITCH_DEG):
  
@@ -73,7 +71,7 @@ class VisionProcessor:
 
             score = (
                 0.4 * norm_length +
-                0.3 * (1 - norm_x_dist) +
+                0.3 * (norm_x_dist)+
                 0.2 * norm_y +
                 0.1 * angle_score
             )
@@ -150,7 +148,7 @@ class VisionProcessor:
             vertical = 0
             horizontal = 0
             cw_roi_diagonal = math.sqrt(math.pow(cw_right - cw_left, 2) + math.pow(cw_bottom - cw_top, 2))
-            crosswalk_pixel_dist = (4 / 5) * (cw_bottom - cw_top) # number of pixels distance before horizontal line of crosswalk
+            crosswalk_pixel_dist = (3.5 / 5) * (cw_bottom - cw_top) # number of pixels distance before horizontal line of crosswalk
             line_min_length = max(cw_roi_diagonal / 20, 10)
             lowest_horizontal_line = None
             if lines is not None:
@@ -175,7 +173,7 @@ class VisionProcessor:
                             vertical += 1
                             cw_lines.append(line)
                         
-            if vertical > 3 and horizontal > 3:
+            if vertical >= 3 and horizontal >= 2:
                 if lowest_horizontal_line is not None:
                     if max(lowest_horizontal_line[0][1],lowest_horizontal_line[0][3]) > crosswalk_pixel_dist:
                         crosswalk = True
@@ -186,13 +184,13 @@ class VisionProcessor:
         # -------------------------
         # LANE MIDPOINT (unchanged)
         # -------------------------
-        rl_x_mid = self._best_mid_x(rl_lines, rl_right - rl_left, rl_bottom - rl_top, "right")
-        ll_x_mid = self._best_mid_x(ll_lines, ll_right - ll_left, ll_bottom - ll_top, "left")
+        rl_x_mid = self._best_mid_x(rl_lines, width * abs(conf.RL_RIGHT_ROII - conf.RL_LEFT_ROI), height * abs(conf.RL_BOTTOM_ROI - conf.RL_TOP_ROI), "right")
+        ll_x_mid = self._best_mid_x(ll_lines, width * abs(conf.LL_RIGHT_ROII - conf.LL_LEFT_ROI), height * abs(conf.LL_BOTTOM_ROI - conf.LL_TOP_ROI), "left")
 
         rl_x_mid_full = (rl_left + rl_x_mid) if rl_x_mid is not None else None
         ll_x_mid_full = (ll_left + ll_x_mid) if ll_x_mid is not None else None
 
-        frame_center = (ll_left + rl_right) / 2
+        frame_center = (ll_right + rl_left) / 2
         if (rl_x_mid_full is not None) and (ll_x_mid_full is not None):
             lane_type = "both"
             self.rroi_unseen_counter -= 1
@@ -218,9 +216,9 @@ class VisionProcessor:
         ll_roi_center = (ll_left + ll_right) / 2.0
 
         if rl_x_mid_full is None and ll_x_mid_full is not None:
-            rl_x_mid_full = rl_roi_center + 5
+            rl_x_mid_full = rl_roi_center
         if ll_x_mid_full is None and rl_x_mid_full is not None:
-            ll_x_mid_full = ll_roi_center
+            ll_x_mid_full = ll_roi_center 
 
         if lane_type in ("both", "only_right", "only_left"):
             lane_center = (rl_x_mid_full + ll_x_mid_full) / 2.0
@@ -234,11 +232,15 @@ class VisionProcessor:
         
         
         if error < 0:
-            kp = (180 - SERVO_CENTER) / abs(min_error)
+            kp = (180 - SERVO_CENTER) / abs(min_error) 
         elif error > 0:
             kp = SERVO_CENTER / abs(max_error)
         else:
             kp = 0
+            
+        
+        kp = math.log(abs(kp+0.0001),2) * (kp/abs(kp+0.0001))
+
             
         # kp = LOW_KP if abs(error) < 25 else HIGH_KP
         if SERVO_DIRECTION == "ltr":
@@ -248,13 +250,17 @@ class VisionProcessor:
         else:
             # default assume ltr
             steering_angle = SERVO_CENTER - kp * error
-                   
-        
-        # if lane_type == "none":
-        #     steering_angle = 150
         
         steering_angle = int(max(MIN_SERVO_ANGLE, min(MAX_SERVO_ANGLE, steering_angle)))
-
+        
+        if lane_type == "none":
+        
+               steering_angle = 150
+        else:
+          steering_angle = self.last_steering * 0.3 + 0.7*  steering_angle
+          self.last_steering = steering_angle
+        
+        
         # -------------------------
         # DEBUG DRAWING
         # -------------------------
@@ -317,3 +323,5 @@ class VisionProcessor:
             "crosswalk": crosswalk,
             "debug": debug
         }
+
+
